@@ -1,0 +1,112 @@
+services:
+  - type: web
+    name: vesna-club-evidence
+    runtime: docker
+    region: frankfurt
+    plan: 0.5c-512mb
+    autoDeployTrigger: checksPass
+    dockerfilePath: ./Dockerfile
+    preDeployCommand: alembic upgrade head
+    healthCheckPath: /health
+    domains:
+      - evidence.spolekvesna.cz
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: vesna-club-db
+          property: connectionString
+      - key: RESTORE_TEST_DATABASE_URL
+        fromDatabase:
+          name: vesna-club-restore-test
+          property: connectionString
+      - key: ALLOW_LOCAL_LOGIN
+        value: "false"
+      - key: BASE_URL
+        value: https://evidence.spolekvesna.cz
+      - key: GOOGLE_ALLOWED_DOMAIN
+        value: spolekvesna.cz
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: BOOTSTRAP_ADMIN_EMAIL
+        sync: false
+      - key: BOOTSTRAP_ADMIN_NAME
+        value: První správce
+      - key: ALLOWED_HOSTS
+        value: evidence.spolekvesna.cz,*.onrender.com
+      - key: BACKUP_RETENTION_DAYS
+        value: "35"
+      - key: BACKUP_S3_BUCKET
+        sync: false
+      - key: BACKUP_S3_PREFIX
+        value: vesna-club
+      - key: BACKUP_S3_ENDPOINT
+        sync: false
+      - key: BACKUP_S3_REGION
+        value: auto
+      - key: BACKUP_S3_SSE
+        value: ""
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: KA31_32_LIMIT_MINUTES
+        value: "600"
+      - key: KA33_LIMIT_MINUTES
+        value: "600"
+
+  - type: cron
+    name: vesna-club-maintenance
+    runtime: docker
+    region: frankfurt
+    plan: 0.5c-512mb
+    schedule: "15 1 * * *"
+    dockerfilePath: ./Dockerfile
+    dockerCommand: alembic upgrade head && python scripts/maintenance.py
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: vesna-club-db
+          property: connectionString
+      - key: RESTORE_TEST_DATABASE_URL
+        fromDatabase:
+          name: vesna-club-restore-test
+          property: connectionString
+      - key: BACKUP_RETENTION_DAYS
+        value: "35"
+      - key: BACKUP_S3_BUCKET
+        sync: false
+      - key: BACKUP_S3_PREFIX
+        value: vesna-club
+      - key: BACKUP_S3_ENDPOINT
+        sync: false
+      - key: BACKUP_S3_REGION
+        value: auto
+      - key: BACKUP_S3_SSE
+        value: ""
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+
+databases:
+  - name: vesna-club-db
+    region: frankfurt
+    plan: 0.1c-256mb
+    databaseName: vesna_club
+    user: vesna_club
+    ipAllowList: []
+
+  - name: vesna-club-restore-test
+    region: frankfurt
+    plan: 0.1c-256mb
+    databaseName: vesna_club_restore_test
+    user: vesna_restore
+    ipAllowList: []

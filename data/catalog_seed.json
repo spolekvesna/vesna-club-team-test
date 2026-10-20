@@ -1,0 +1,1730 @@
+[
+  {
+    "PolozkaID": "OBL001",
+    "Kategorie": "Oblast",
+    "NadrazenaID": null,
+    "Nazev": "Orientace a vstup do podpory",
+    "Poradi": 1,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN001",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL001",
+    "Nazev": "První kontakt",
+    "Poradi": 1,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN002",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL001",
+    "Nazev": "Zjištění potřeb",
+    "Poradi": 2,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN003",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL001",
+    "Nazev": "Mapování životní situace",
+    "Poradi": 3,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN004",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL001",
+    "Nazev": "Seznámení s nabídkou podpory",
+    "Poradi": 4,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN005",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL001",
+    "Nazev": "Stanovení cíle podpory",
+    "Poradi": 5,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN006",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL001",
+    "Nazev": "Sestavení individuálního plánu",
+    "Poradi": 6,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN007",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL001",
+    "Nazev": "Revize individuálního plánu",
+    "Poradi": 7,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN008",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL001",
+    "Nazev": "Závěrečné vyhodnocení podpory",
+    "Poradi": 8,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "OBL002",
+    "Kategorie": "Oblast",
+    "NadrazenaID": null,
+    "Nazev": "Bydlení",
+    "Poradi": 2,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN009",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL002",
+    "Nazev": "Vyhledávání bydlení",
+    "Poradi": 9,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN010",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL002",
+    "Nazev": "Orientace v nabídce bydlení",
+    "Poradi": 10,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN011",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL002",
+    "Nazev": "Podpora při komunikaci s pronajímatelem",
+    "Poradi": 11,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN012",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL002",
+    "Nazev": "Pomoc s žádostí o bydlení",
+    "Poradi": 12,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN013",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL002",
+    "Nazev": "Orientace v nájemních dokumentech",
+    "Poradi": 13,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN014",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL002",
+    "Nazev": "Řešení udržení bydlení",
+    "Poradi": 14,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN015",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL002",
+    "Nazev": "Zprostředkování bytového poradenství",
+    "Poradi": 15,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN016",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL002",
+    "Nazev": "Zprostředkování krizového ubytování",
+    "Poradi": 16,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "OBL003",
+    "Kategorie": "Oblast",
+    "NadrazenaID": null,
+    "Nazev": "Zaměstnání a podnikání",
+    "Poradi": 3,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN017",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL003",
+    "Nazev": "Mapování pracovních zkušeností",
+    "Poradi": 17,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN018",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL003",
+    "Nazev": "Vyhledávání pracovních nabídek",
+    "Poradi": 18,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN019",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL003",
+    "Nazev": "Příprava životopisu",
+    "Poradi": 19,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN020",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL003",
+    "Nazev": "Příprava motivačního dopisu",
+    "Poradi": 20,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN021",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL003",
+    "Nazev": "Příprava na pracovní pohovor",
+    "Poradi": 21,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN022",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL003",
+    "Nazev": "Podpora při komunikaci se zaměstnavatelem",
+    "Poradi": 22,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN023",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL003",
+    "Nazev": "Orientace v pracovních dokumentech",
+    "Poradi": 23,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN024",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL003",
+    "Nazev": "Registrace na úřadu práce",
+    "Poradi": 24,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN025",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL003",
+    "Nazev": "Zprostředkování pracovního poradenství",
+    "Poradi": 25,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN026",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL003",
+    "Nazev": "Vyhledávání rekvalifikace",
+    "Poradi": 26,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN027",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL003",
+    "Nazev": "Orientace v podnikání",
+    "Poradi": 27,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN028",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL003",
+    "Nazev": "Zprostředkování podnikatelské konzultace",
+    "Poradi": 28,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "OBL004",
+    "Kategorie": "Oblast",
+    "NadrazenaID": null,
+    "Nazev": "Vzdělávání a jazyk",
+    "Poradi": 4,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN029",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL004",
+    "Nazev": "Zjištění vzdělávacích potřeb",
+    "Poradi": 29,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN030",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL004",
+    "Nazev": "Vyhledávání kurzu češtiny",
+    "Poradi": 30,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN031",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL004",
+    "Nazev": "Registrace do kurzu",
+    "Poradi": 31,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN032",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL004",
+    "Nazev": "Procvičování češtiny při řešení konkrétní situace",
+    "Poradi": 32,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN033",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL004",
+    "Nazev": "Vyhledávání vzdělávací příležitosti",
+    "Poradi": 33,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN034",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL004",
+    "Nazev": "Orientace v uznávání vzdělání",
+    "Poradi": 34,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN035",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL004",
+    "Nazev": "Podpora při přihlášce ke studiu",
+    "Poradi": 35,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN036",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL004",
+    "Nazev": "Podpora při komunikaci se školou",
+    "Poradi": 36,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN037",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL004",
+    "Nazev": "Zprostředkování doučování",
+    "Poradi": 37,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN038",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL004",
+    "Nazev": "Podpora při přípravě na zkoušku",
+    "Poradi": 38,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "OBL005",
+    "Kategorie": "Oblast",
+    "NadrazenaID": null,
+    "Nazev": "Úřady a veřejné služby",
+    "Poradi": 5,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN039",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL005",
+    "Nazev": "Orientace v působnosti úřadů",
+    "Poradi": 39,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN040",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL005",
+    "Nazev": "Objednání na úřad",
+    "Poradi": 40,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN041",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL005",
+    "Nazev": "Pomoc s vyplněním formuláře",
+    "Poradi": 41,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN042",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL005",
+    "Nazev": "Příprava podkladů pro jednání",
+    "Poradi": 42,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN043",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL005",
+    "Nazev": "Podpora při komunikaci s úřadem",
+    "Poradi": 43,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN044",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL005",
+    "Nazev": "Doprovod na úřad",
+    "Poradi": 44,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN045",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL005",
+    "Nazev": "Orientace v doručené korespondenci",
+    "Poradi": 45,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN046",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL005",
+    "Nazev": "Podpora při podání žádosti",
+    "Poradi": 46,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN047",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL005",
+    "Nazev": "Sledování stavu podání",
+    "Poradi": 47,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN048",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL005",
+    "Nazev": "Zprostředkování odborného poradenství",
+    "Poradi": 48,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "OBL006",
+    "Kategorie": "Oblast",
+    "NadrazenaID": null,
+    "Nazev": "Pobyt a integrace",
+    "Poradi": 6,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN049",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL006",
+    "Nazev": "Orientace v pobytových záležitostech",
+    "Poradi": 49,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN050",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL006",
+    "Nazev": "Vyhledání ověřených informací k pobytu",
+    "Poradi": 50,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN051",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL006",
+    "Nazev": "Objednání k pobytovému jednání",
+    "Poradi": 51,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN052",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL006",
+    "Nazev": "Pomoc s přípravou pobytových podkladů",
+    "Poradi": 52,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN053",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL006",
+    "Nazev": "Zprostředkování migračního poradenství",
+    "Poradi": 53,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN054",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL006",
+    "Nazev": "Orientace v místních službách",
+    "Poradi": 54,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN055",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL006",
+    "Nazev": "Orientace v právech a povinnostech",
+    "Poradi": 55,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN056",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL006",
+    "Nazev": "Podpora při začlenění do komunity",
+    "Poradi": 56,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "OBL007",
+    "Kategorie": "Oblast",
+    "NadrazenaID": null,
+    "Nazev": "Finance a materiální situace",
+    "Poradi": 7,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN057",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL007",
+    "Nazev": "Mapování rodinného rozpočtu",
+    "Poradi": 57,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN058",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL007",
+    "Nazev": "Sestavení přehledu příjmů a výdajů",
+    "Poradi": 58,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN059",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL007",
+    "Nazev": "Orientace v sociálních dávkách",
+    "Poradi": 59,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN060",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL007",
+    "Nazev": "Pomoc s podklady k dávkám",
+    "Poradi": 60,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN061",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL007",
+    "Nazev": "Podpora při žádosti o dávku",
+    "Poradi": 61,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN062",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL007",
+    "Nazev": "Orientace v závazcích",
+    "Poradi": 62,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN063",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL007",
+    "Nazev": "Zprostředkování dluhového poradenství",
+    "Poradi": 63,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN064",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL007",
+    "Nazev": "Vyhledání materiální pomoci",
+    "Poradi": 64,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN065",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL007",
+    "Nazev": "Zprostředkování potravinové pomoci",
+    "Poradi": 65,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN066",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL007",
+    "Nazev": "Zprostředkování oděvní pomoci",
+    "Poradi": 66,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN067",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL007",
+    "Nazev": "Zprostředkování nadační pomoci",
+    "Poradi": 67,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "OBL008",
+    "Kategorie": "Oblast",
+    "NadrazenaID": null,
+    "Nazev": "Rodina a péče o děti",
+    "Poradi": 8,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN068",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL008",
+    "Nazev": "Mapování potřeb rodiny",
+    "Poradi": 68,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN069",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL008",
+    "Nazev": "Vyhledávání péče o děti",
+    "Poradi": 69,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN070",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL008",
+    "Nazev": "Podpora při zápisu do dětské skupiny",
+    "Poradi": 70,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN071",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL008",
+    "Nazev": "Podpora při zápisu do mateřské školy",
+    "Poradi": 71,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN072",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL008",
+    "Nazev": "Podpora při zápisu do školy",
+    "Poradi": 72,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN073",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL008",
+    "Nazev": "Zprostředkování rodinného poradenství",
+    "Poradi": 73,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN074",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL008",
+    "Nazev": "Podpora při sladění práce a péče",
+    "Poradi": 74,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN075",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL008",
+    "Nazev": "Vyhledávání volnočasových aktivit pro děti",
+    "Poradi": 75,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN076",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL008",
+    "Nazev": "Podpora při komunikaci s institucemi péče o děti",
+    "Poradi": 76,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "OBL009",
+    "Kategorie": "Oblast",
+    "NadrazenaID": null,
+    "Nazev": "Zdraví a dostupnost péče",
+    "Poradi": 9,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN077",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL009",
+    "Nazev": "Vyhledávání zdravotní péče",
+    "Poradi": 77,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN078",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL009",
+    "Nazev": "Objednání ke zdravotní službě",
+    "Poradi": 78,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN079",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL009",
+    "Nazev": "Orientace ve zdravotním pojištění",
+    "Poradi": 79,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN080",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL009",
+    "Nazev": "Podpora při komunikaci s pojišťovnou",
+    "Poradi": 80,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN081",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL009",
+    "Nazev": "Podpora při komunikaci se zdravotní službou",
+    "Poradi": 81,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN082",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL009",
+    "Nazev": "Doprovod ke zdravotní službě",
+    "Poradi": 82,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN083",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL009",
+    "Nazev": "Zprostředkování psychologické podpory",
+    "Poradi": 83,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN084",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL009",
+    "Nazev": "Zprostředkování odborné zdravotní péče",
+    "Poradi": 84,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "OBL010",
+    "Kategorie": "Oblast",
+    "NadrazenaID": null,
+    "Nazev": "Psychosociální podpora a bezpečí",
+    "Poradi": 10,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN085",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL010",
+    "Nazev": "Podpůrný rozhovor",
+    "Poradi": 85,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN086",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL010",
+    "Nazev": "Mapování podpůrné sítě",
+    "Poradi": 86,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN087",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL010",
+    "Nazev": "Podpora při zvládání náročné situace",
+    "Poradi": 87,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN088",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL010",
+    "Nazev": "Posílení samostatnosti",
+    "Poradi": 88,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN089",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL010",
+    "Nazev": "Podpora při řešení vztahové situace",
+    "Poradi": 89,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN090",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL010",
+    "Nazev": "Zprostředkování krizové pomoci",
+    "Poradi": 90,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN091",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL010",
+    "Nazev": "Zprostředkování pomoci při násilí",
+    "Poradi": 91,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN092",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL010",
+    "Nazev": "Zprostředkování odborné sociální služby",
+    "Poradi": 92,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "OBL011",
+    "Kategorie": "Oblast",
+    "NadrazenaID": null,
+    "Nazev": "Digitální dovednosti",
+    "Poradi": 11,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN093",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL011",
+    "Nazev": "Založení a používání e-mailu",
+    "Poradi": 93,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN094",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL011",
+    "Nazev": "Práce s přílohami a dokumenty",
+    "Poradi": 94,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN095",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL011",
+    "Nazev": "Vyplnění elektronického formuláře",
+    "Poradi": 95,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN096",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL011",
+    "Nazev": "Online objednání služby",
+    "Poradi": 96,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN097",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL011",
+    "Nazev": "Používání videohovoru",
+    "Poradi": 97,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN098",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL011",
+    "Nazev": "Orientace v klientském portálu",
+    "Poradi": 98,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN099",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL011",
+    "Nazev": "Orientace v elektronické identitě",
+    "Poradi": 99,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN100",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL011",
+    "Nazev": "Orientace v datové schránce",
+    "Poradi": 100,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN101",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL011",
+    "Nazev": "Bezpečné používání internetu",
+    "Poradi": 101,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN102",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL011",
+    "Nazev": "Práce se zařízením nebo aplikací",
+    "Poradi": 102,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "OBL012",
+    "Kategorie": "Oblast",
+    "NadrazenaID": null,
+    "Nazev": "Komunita a dobrovolnictví",
+    "Poradi": 12,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN103",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL012",
+    "Nazev": "Vyhledání komunitní aktivity",
+    "Poradi": 103,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN104",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL012",
+    "Nazev": "Zprostředkování kontaktu s komunitou",
+    "Poradi": 104,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN105",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL012",
+    "Nazev": "Zapojení do dobrovolnictví",
+    "Poradi": 105,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN106",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL012",
+    "Nazev": "Zjištění dobrovolnických možností",
+    "Poradi": 106,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN107",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL012",
+    "Nazev": "Podpora při prvním zapojení",
+    "Poradi": 107,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN108",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL012",
+    "Nazev": "Podpora při komunikaci v týmu",
+    "Poradi": 108,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN109",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL012",
+    "Nazev": "Reflexe dobrovolnické zkušenosti",
+    "Poradi": 109,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN110",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL012",
+    "Nazev": "Vyhledání zájmové nebo kulturní aktivity",
+    "Poradi": 110,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "OBL013",
+    "Kategorie": "Oblast",
+    "NadrazenaID": null,
+    "Nazev": "Právní orientace a návazné služby",
+    "Poradi": 13,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN111",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL013",
+    "Nazev": "Identifikace potřeby právní pomoci",
+    "Poradi": 111,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN112",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL013",
+    "Nazev": "Vyhledání dostupné právní poradny",
+    "Poradi": 112,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN113",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL013",
+    "Nazev": "Objednání do právní poradny",
+    "Poradi": 113,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN114",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL013",
+    "Nazev": "Příprava podkladů pro odborníka",
+    "Poradi": 114,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN115",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL013",
+    "Nazev": "Zprostředkování specializované služby",
+    "Poradi": 115,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN116",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL013",
+    "Nazev": "Podpora při kontaktování návazné služby",
+    "Poradi": 116,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN117",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL013",
+    "Nazev": "Ověření návaznosti podpory",
+    "Poradi": 117,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "OBL014",
+    "Kategorie": "Oblast",
+    "NadrazenaID": null,
+    "Nazev": "Jiná oblast",
+    "Poradi": 14,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "CIN118",
+    "Kategorie": "Cinnost",
+    "NadrazenaID": "OBL014",
+    "Nazev": "Jiná individuální činnost",
+    "Poradi": 118,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL001",
+    "Kategorie": "Forma",
+    "NadrazenaID": null,
+    "Nazev": "Osobně",
+    "Poradi": 1,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL002",
+    "Kategorie": "Forma",
+    "NadrazenaID": null,
+    "Nazev": "Telefonicky",
+    "Poradi": 2,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL003",
+    "Kategorie": "Forma",
+    "NadrazenaID": null,
+    "Nazev": "Videohovor",
+    "Poradi": 3,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL004",
+    "Kategorie": "Forma",
+    "NadrazenaID": null,
+    "Nazev": "E-mail",
+    "Poradi": 4,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL005",
+    "Kategorie": "Forma",
+    "NadrazenaID": null,
+    "Nazev": "Chat nebo zprávy",
+    "Poradi": 5,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL006",
+    "Kategorie": "Forma",
+    "NadrazenaID": null,
+    "Nazev": "Kombinovaně",
+    "Poradi": 6,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL007",
+    "Kategorie": "Forma",
+    "NadrazenaID": null,
+    "Nazev": "Jiná forma",
+    "Poradi": 7,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL008",
+    "Kategorie": "Misto",
+    "NadrazenaID": null,
+    "Nazev": "Prostory Vesny",
+    "Poradi": 1,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL009",
+    "Kategorie": "Misto",
+    "NadrazenaID": null,
+    "Nazev": "Terén",
+    "Poradi": 2,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL010",
+    "Kategorie": "Misto",
+    "NadrazenaID": null,
+    "Nazev": "Bydliště účastníka",
+    "Poradi": 3,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL011",
+    "Kategorie": "Misto",
+    "NadrazenaID": null,
+    "Nazev": "Úřad nebo veřejná instituce",
+    "Poradi": 4,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL012",
+    "Kategorie": "Misto",
+    "NadrazenaID": null,
+    "Nazev": "Škola nebo vzdělávací zařízení",
+    "Poradi": 5,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL013",
+    "Kategorie": "Misto",
+    "NadrazenaID": null,
+    "Nazev": "Zdravotní služba",
+    "Poradi": 6,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL014",
+    "Kategorie": "Misto",
+    "NadrazenaID": null,
+    "Nazev": "Pracoviště návazné služby",
+    "Poradi": 7,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL015",
+    "Kategorie": "Misto",
+    "NadrazenaID": null,
+    "Nazev": "Online / na dálku",
+    "Poradi": 8,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL016",
+    "Kategorie": "Misto",
+    "NadrazenaID": null,
+    "Nazev": "Jiné místo",
+    "Poradi": 9,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL017",
+    "Kategorie": "Metoda",
+    "NadrazenaID": null,
+    "Nazev": "Informační podpora",
+    "Poradi": 1,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL018",
+    "Kategorie": "Metoda",
+    "NadrazenaID": null,
+    "Nazev": "Praktická pomoc",
+    "Poradi": 2,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL019",
+    "Kategorie": "Metoda",
+    "NadrazenaID": null,
+    "Nazev": "Nácvik dovednosti",
+    "Poradi": 3,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL020",
+    "Kategorie": "Metoda",
+    "NadrazenaID": null,
+    "Nazev": "Podpůrný rozhovor",
+    "Poradi": 4,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL021",
+    "Kategorie": "Metoda",
+    "NadrazenaID": null,
+    "Nazev": "Doprovod",
+    "Poradi": 5,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL022",
+    "Kategorie": "Metoda",
+    "NadrazenaID": null,
+    "Nazev": "Zprostředkování kontaktu",
+    "Poradi": 6,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL023",
+    "Kategorie": "Metoda",
+    "NadrazenaID": null,
+    "Nazev": "Asistence při komunikaci",
+    "Poradi": 7,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL024",
+    "Kategorie": "Metoda",
+    "NadrazenaID": null,
+    "Nazev": "Tlumočnická asistence",
+    "Poradi": 8,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL025",
+    "Kategorie": "Metoda",
+    "NadrazenaID": null,
+    "Nazev": "Koordinace návazné podpory",
+    "Poradi": 9,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL026",
+    "Kategorie": "Metoda",
+    "NadrazenaID": null,
+    "Nazev": "Jiný způsob",
+    "Poradi": 10,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL027",
+    "Kategorie": "Jazyk",
+    "NadrazenaID": null,
+    "Nazev": "Čeština",
+    "Poradi": 1,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL028",
+    "Kategorie": "Jazyk",
+    "NadrazenaID": null,
+    "Nazev": "Ukrajinština",
+    "Poradi": 2,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL029",
+    "Kategorie": "Jazyk",
+    "NadrazenaID": null,
+    "Nazev": "Ruština",
+    "Poradi": 3,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL030",
+    "Kategorie": "Jazyk",
+    "NadrazenaID": null,
+    "Nazev": "Angličtina",
+    "Poradi": 4,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL031",
+    "Kategorie": "Jazyk",
+    "NadrazenaID": null,
+    "Nazev": "Více jazyků",
+    "Poradi": 5,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL032",
+    "Kategorie": "Jazyk",
+    "NadrazenaID": null,
+    "Nazev": "Jiný jazyk",
+    "Poradi": 6,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL033",
+    "Kategorie": "Vysledek",
+    "NadrazenaID": null,
+    "Nazev": "Informace předány",
+    "Poradi": 1,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL034",
+    "Kategorie": "Vysledek",
+    "NadrazenaID": null,
+    "Nazev": "Potřeba upřesněna",
+    "Poradi": 2,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL035",
+    "Kategorie": "Vysledek",
+    "NadrazenaID": null,
+    "Nazev": "Cíl podpory stanoven",
+    "Poradi": 3,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL036",
+    "Kategorie": "Vysledek",
+    "NadrazenaID": null,
+    "Nazev": "Dokument připraven",
+    "Poradi": 4,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL037",
+    "Kategorie": "Vysledek",
+    "NadrazenaID": null,
+    "Nazev": "Žádost podána",
+    "Poradi": 5,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL038",
+    "Kategorie": "Vysledek",
+    "NadrazenaID": null,
+    "Nazev": "Termín sjednán",
+    "Poradi": 6,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL039",
+    "Kategorie": "Vysledek",
+    "NadrazenaID": null,
+    "Nazev": "Kontakt zprostředkován",
+    "Poradi": 7,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL040",
+    "Kategorie": "Vysledek",
+    "NadrazenaID": null,
+    "Nazev": "Služba navázána",
+    "Poradi": 8,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL041",
+    "Kategorie": "Vysledek",
+    "NadrazenaID": null,
+    "Nazev": "Dovednost procvičena",
+    "Poradi": 9,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL042",
+    "Kategorie": "Vysledek",
+    "NadrazenaID": null,
+    "Nazev": "Samostatný krok účastníka dokončen",
+    "Poradi": 10,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL043",
+    "Kategorie": "Vysledek",
+    "NadrazenaID": null,
+    "Nazev": "Situace částečně vyřešena",
+    "Poradi": 11,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL044",
+    "Kategorie": "Vysledek",
+    "NadrazenaID": null,
+    "Nazev": "Situace vyřešena",
+    "Poradi": 12,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL045",
+    "Kategorie": "Vysledek",
+    "NadrazenaID": null,
+    "Nazev": "Čeká se na rozhodnutí třetí strany",
+    "Poradi": 13,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL046",
+    "Kategorie": "Vysledek",
+    "NadrazenaID": null,
+    "Nazev": "Pokračování podpory potřebné",
+    "Poradi": 14,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL047",
+    "Kategorie": "Vysledek",
+    "NadrazenaID": null,
+    "Nazev": "Bez dosaženého výsledku",
+    "Poradi": 15,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL048",
+    "Kategorie": "Vysledek",
+    "NadrazenaID": null,
+    "Nazev": "Jiný výsledek",
+    "Poradi": 16,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL049",
+    "Kategorie": "DalsiKrok",
+    "NadrazenaID": null,
+    "Nazev": "Další konzultace",
+    "Poradi": 1,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL050",
+    "Kategorie": "DalsiKrok",
+    "NadrazenaID": null,
+    "Nazev": "Doplnění podkladů účastníkem",
+    "Poradi": 2,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL051",
+    "Kategorie": "DalsiKrok",
+    "NadrazenaID": null,
+    "Nazev": "Kontaktování instituce účastníkem",
+    "Poradi": 3,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL052",
+    "Kategorie": "DalsiKrok",
+    "NadrazenaID": null,
+    "Nazev": "Kontaktování instituce pracovníkem",
+    "Poradi": 4,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL053",
+    "Kategorie": "DalsiKrok",
+    "NadrazenaID": null,
+    "Nazev": "Doprovod na sjednaný termín",
+    "Poradi": 5,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL054",
+    "Kategorie": "DalsiKrok",
+    "NadrazenaID": null,
+    "Nazev": "Předání návazné službě",
+    "Poradi": 6,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL055",
+    "Kategorie": "DalsiKrok",
+    "NadrazenaID": null,
+    "Nazev": "Ověření výsledku žádosti",
+    "Poradi": 7,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL056",
+    "Kategorie": "DalsiKrok",
+    "NadrazenaID": null,
+    "Nazev": "Procvičení dovednosti",
+    "Poradi": 8,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL057",
+    "Kategorie": "DalsiKrok",
+    "NadrazenaID": null,
+    "Nazev": "Revize cíle podpory",
+    "Poradi": 9,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL058",
+    "Kategorie": "DalsiKrok",
+    "NadrazenaID": null,
+    "Nazev": "Ukončení podpory",
+    "Poradi": 10,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL059",
+    "Kategorie": "DalsiKrok",
+    "NadrazenaID": null,
+    "Nazev": "Bez dalšího kroku",
+    "Poradi": 11,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL060",
+    "Kategorie": "DalsiKrok",
+    "NadrazenaID": null,
+    "Nazev": "Jiný navazující krok",
+    "Poradi": 12,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL061",
+    "Kategorie": "Pokrok",
+    "NadrazenaID": null,
+    "Nazev": "Nehodnoceno",
+    "Poradi": 1,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL062",
+    "Kategorie": "Pokrok",
+    "NadrazenaID": null,
+    "Nazev": "Cíl nově stanoven",
+    "Poradi": 2,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL063",
+    "Kategorie": "Pokrok",
+    "NadrazenaID": null,
+    "Nazev": "Bez změny",
+    "Poradi": 3,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL064",
+    "Kategorie": "Pokrok",
+    "NadrazenaID": null,
+    "Nazev": "Částečný pokrok",
+    "Poradi": 4,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL065",
+    "Kategorie": "Pokrok",
+    "NadrazenaID": null,
+    "Nazev": "Výrazný pokrok",
+    "Poradi": 5,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL066",
+    "Kategorie": "Pokrok",
+    "NadrazenaID": null,
+    "Nazev": "Cíl splněn",
+    "Poradi": 6,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL067",
+    "Kategorie": "Pokrok",
+    "NadrazenaID": null,
+    "Nazev": "Situace se zhoršila",
+    "Poradi": 7,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL068",
+    "Kategorie": "Pokrok",
+    "NadrazenaID": null,
+    "Nazev": "Nelze vyhodnotit",
+    "Poradi": 8,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL069",
+    "Kategorie": "NavaznaSluzba",
+    "NadrazenaID": null,
+    "Nazev": "Bez předání",
+    "Poradi": 1,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL070",
+    "Kategorie": "NavaznaSluzba",
+    "NadrazenaID": null,
+    "Nazev": "Úřad práce",
+    "Poradi": 2,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL071",
+    "Kategorie": "NavaznaSluzba",
+    "NadrazenaID": null,
+    "Nazev": "Obecní nebo městský úřad",
+    "Poradi": 3,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL072",
+    "Kategorie": "NavaznaSluzba",
+    "NadrazenaID": null,
+    "Nazev": "Ministerstvo vnitra / pracoviště pobytu",
+    "Poradi": 4,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL073",
+    "Kategorie": "NavaznaSluzba",
+    "NadrazenaID": null,
+    "Nazev": "Škola nebo školské zařízení",
+    "Poradi": 5,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL074",
+    "Kategorie": "NavaznaSluzba",
+    "NadrazenaID": null,
+    "Nazev": "Poskytovatel jazykového vzdělávání",
+    "Poradi": 6,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL075",
+    "Kategorie": "NavaznaSluzba",
+    "NadrazenaID": null,
+    "Nazev": "Poskytovatel zdravotní péče",
+    "Poradi": 7,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL076",
+    "Kategorie": "NavaznaSluzba",
+    "NadrazenaID": null,
+    "Nazev": "Psychologická poradna",
+    "Poradi": 8,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL077",
+    "Kategorie": "NavaznaSluzba",
+    "NadrazenaID": null,
+    "Nazev": "Krizová služba",
+    "Poradi": 9,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL078",
+    "Kategorie": "NavaznaSluzba",
+    "NadrazenaID": null,
+    "Nazev": "Právní poradna",
+    "Poradi": 10,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL079",
+    "Kategorie": "NavaznaSluzba",
+    "NadrazenaID": null,
+    "Nazev": "Dluhová poradna",
+    "Poradi": 11,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL080",
+    "Kategorie": "NavaznaSluzba",
+    "NadrazenaID": null,
+    "Nazev": "Sociální služba",
+    "Poradi": 12,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL081",
+    "Kategorie": "NavaznaSluzba",
+    "NadrazenaID": null,
+    "Nazev": "Integrační centrum",
+    "Poradi": 13,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL082",
+    "Kategorie": "NavaznaSluzba",
+    "NadrazenaID": null,
+    "Nazev": "Organizace materiální pomoci",
+    "Poradi": 14,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL083",
+    "Kategorie": "NavaznaSluzba",
+    "NadrazenaID": null,
+    "Nazev": "Dobrovolnické centrum",
+    "Poradi": 15,
+    "Aktivni": true
+  },
+  {
+    "PolozkaID": "POL084",
+    "Kategorie": "NavaznaSluzba",
+    "NadrazenaID": null,
+    "Nazev": "Jiná návazná služba",
+    "Poradi": 16,
+    "Aktivni": true
+  }
+]

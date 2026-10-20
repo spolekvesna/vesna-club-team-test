@@ -1,0 +1,37 @@
+services:
+  - type: web
+    name: vesna-club-team-test
+    runtime: docker
+    region: frankfurt
+    plan: free
+    autoDeployTrigger: commit
+    dockerfilePath: ./Dockerfile
+    dockerCommand: sh -c "alembic upgrade head && python scripts/seed_demo.py && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-10000} --proxy-headers --forwarded-allow-ips='*'"
+    healthCheckPath: /health
+    envVars:
+      - key: APP_ENV
+        value: team-test
+      - key: APP_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: vesna-club-team-test-db
+          property: connectionString
+      - key: ALLOW_LOCAL_LOGIN
+        value: "true"
+      - key: ALLOWED_HOSTS
+        value: "*.onrender.com"
+      - key: BACKUP_RETENTION_DAYS
+        value: "7"
+      - key: KA31_32_LIMIT_MINUTES
+        value: "600"
+      - key: KA33_LIMIT_MINUTES
+        value: "600"
+
+databases:
+  - name: vesna-club-team-test-db
+    region: frankfurt
+    plan: free
+    databaseName: vesna_club_team_test
+    user: vesna_club_team_test
+    ipAllowList: []

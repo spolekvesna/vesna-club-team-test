@@ -1,0 +1,97 @@
+<!doctype html><html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Vesna Club TEAM TEST – Start tady</title><style>
+body{font-family:Arial,sans-serif;line-height:1.55;max-width:920px;margin:36px auto;padding:0 22px;color:#1f2a24;background:#f6f8f6}h1{background:#244b3a;color:white;padding:24px;border-radius:12px}h2{margin-top:34px;color:#244b3a;border-bottom:2px solid #b8d7c6;padding-bottom:6px}h3{color:#365f4d}p,.bullet,.step{background:white;padding:8px 12px;margin:5px 0;border-radius:7px}.step{border-left:5px solid #77a88c}.warn{background:#fff4c7;border:2px solid #d6a900;padding:14px 16px;border-radius:9px;font-weight:700;margin:18px 0}code{background:#eef2ef;padding:2px 5px;border-radius:4px}@media(max-width:600px){body{margin:12px auto;padding:0 10px}h1{font-size:24px}}
+</style></head><body><h1>VESNA CLUB – TEAM TEST: START TADY</h1>
+<p>Tento balíček je připravený tak, aby **aplikaci nasadil jednou jeden člověk** a všichni ostatní členové týmu už jen otevřeli odkaz v prohlížeči. Na počítače ani telefony týmu se nic neinstaluje.</p>
+<div class="warn">**DŮLEŽITÉ:** TEAM TEST je pouze pro fiktivní/syntetická data. Nevkládejte skutečná jména klientů, telefonní čísla, e-maily, adresy, zdravotní nebo sociální údaje ani jiné osobní údaje.</div>
+<h2>A. Jednorázové spuštění – udělá správce testu</h2>
+<h3>1. Rozbal balíček</h3>
+<p>Rozbal ZIP do běžné složky. Uvnitř musí být v hlavní úrovni mimo jiné soubor <code>render.yaml</code>, `Dockerfile`, složka `app` a tento návod.</p>
+<h3>2. Založ soukromý repozitář na GitHubu</h3>
+<div class="step">1. Přihlas se na https://github.com účtem, který může Vesna dlouhodobě používat.</div>
+<div class="step">2. Vpravo nahoře klikni na **+ → New repository**.</div>
+<div class="step">3. Název: `vesna-club-team-test`.</div>
+<div class="step">4. Viditelnost nastav na **Private**.</div>
+<div class="step">5. Nezaškrtávej vytvoření README, `.gitignore` ani licence – vše už je v balíčku.</div>
+<div class="step">6. Klikni na **Create repository**.</div>
+<div class="step">7. V novém prázdném repozitáři zvol **Add file → Upload files** (nebo odkaz pro nahrání existujících souborů).</div>
+<div class="step">8. Přetáhni do okna **obsah rozbalené složky**, ne samotný ZIP. GitHub umí přes web nahrát i složky.</div>
+<div class="step">9. Zkontroluj, že `render.yaml` je přímo v kořeni repozitáře, nikoli o jednu složku níž.</div>
+<div class="step">10. Dole potvrď **Commit changes**.</div>
+<h3>3. Připoj Render</h3>
+<div class="step">1. Otevři https://render.com a přihlas se / vytvoř účet, ideálně účet spravovaný Vesnou.</div>
+<div class="step">2. Pokud Render požádá o propojení GitHubu, povol mu přístup pouze k repozitáři `vesna-club-team-test`.</div>
+<div class="step">3. V Render Dashboard zvol **New → Blueprint**.</div>
+<div class="step">4. Vyber repozitář `vesna-club-team-test`.</div>
+<div class="step">5. Render automaticky načte `render.yaml`.</div>
+<h3>4. Zkontroluj, co Render vytvoří</h3>
+<p>Měly by se objevit dvě položky:</p>
+<div class="bullet">• webová služba **`vesna-club-team-test`**, plán **Free**, region **Frankfurt**;</div>
+<div class="bullet">• databáze **`vesna-club-team-test-db`**, PostgreSQL, plán **Free**, region **Frankfurt**.</div>
+<p>Nic dalšího není třeba ručně vyplňovat. Tajný klíč aplikace se vygeneruje automaticky a databázové spojení se propojí z Blueprintu.</p>
+<h3>5. Spusť nasazení</h3>
+<div class="step">1. Klikni **Deploy Blueprint / Apply** (pojmenování se může v rozhraní Renderu mírně lišit).</div>
+<div class="step">2. Počkej, až webová služba dostane stav **Live**.</div>
+<div class="step">3. Otevři její adresu ve tvaru `https://vesna-club-team-test-xxxx.onrender.com`.</div>
+<div class="step">4. Při prvním otevření může načtení chvíli trvat – aplikace zakládá databázi a syntetická demo data.</div>
+<div class="step">5. Pokud vidíš přihlašovací stránku s výrazným označením **TESTOVACÍ VERZE**, je spuštění hotové.</div>
+<h2>B. Přihlášení pro tým</h2>
+<h3>Správce</h3>
+<div class="bullet">• uživatel: `admin@example.test`</div>
+<div class="bullet">• heslo: `VesnaDemo!2026`</div>
+<h3>Pracovník</h3>
+<div class="bullet">• uživatel: `worker@example.test`</div>
+<div class="bullet">• heslo: `VesnaDemo!2026`</div>
+<h3>Čtenář / reporting</h3>
+<div class="bullet">• uživatel: `reader@example.test`</div>
+<div class="bullet">• heslo: `VesnaDemo!2026`</div>
+<p>Doporučení: běžným testerům dej hlavně účet **pracovníka**. Správce má zkoušet číselníky, pracovníky a nastavení. Účet čtenáře použijte k ověření omezených práv.</p>
+<h2>C. Co má tým udělat</h2>
+<p>Tým už nic neinstaluje. Stačí:</p>
+<div class="step">1. otevřít sdílený odkaz v Chrome/Edge/Safari;</div>
+<div class="step">2. přihlásit se testovacím účtem;</div>
+<div class="step">3. pracovat pouze s vymyšlenými osobami a údaji;</div>
+<div class="step">4. projít soubor `02_CHECKLIST_PRO_TYM.md`;</div>
+<div class="step">5. u chyb poslat screenshot, použitou roli, co uživatel udělal a co očekával.</div>
+<h2>D. Co je v TEAM TESTU schválně zjednodušené</h2>
+<div class="bullet">• není potřeba doména `spolekvesna.cz`;</div>
+<div class="bullet">• není zapnuté přihlášení přes Google Workspace;</div>
+<div class="bullet">• nejsou použita skutečná klientská data;</div>
+<div class="bullet">• není zapnutý produkční systém externích záloh;</div>
+<div class="bullet">• používá se bezplatná PostgreSQL databáze;</div>
+<div class="bullet">• web se po delší nečinnosti uspí a první otevření potom může být pomalejší.</div>
+<h2>E. Důležitá omezení bezplatné verze Renderu</h2>
+<div class="bullet">• Free web se po 15 minutách bez návštěvy uspává; další otevření jej probudí a může trvat přibližně minutu.</div>
+<div class="bullet">• Free PostgreSQL databáze má limit 1 GB a po 30 dnech expiruje. Není určena pro ostrý provoz a Render pro ni neposkytuje databázové zálohy.</div>
+<div class="bullet">• Testovací data proto berte jako dočasná. Nic, co potřebujete archivovat, do TEAM TESTU nepatří.</div>
+<h2>F. Když něco nejde</h2>
+<h3>Odkaz dlouho „načítá“</h3>
+<p>Po nečinnosti je to u Free plánu normální. Počkej přibližně minutu a stránku znovu načti.</p>
+<h3>Render hlásí, že nenachází `render.yaml`</h3>
+<p>Na GitHubu je pravděpodobně celý balík vložený jako jedna nadřazená složka. <code>render.yaml</code> musí být vidět hned na hlavní stránce repozitáře.</p>
+<h3>Render nevidí soukromý repozitář</h3>
+<p>V nastavení připojení GitHubu povol Renderu přístup k repozitáři <code>vesna-club-team-test</code>.</p>
+<h3>Aplikace ukazuje chybu při prvním deployi</h3>
+<p>V Renderu otevři webovou službu → **Logs**. Zkopíruj poslední část chybového výpisu a pošli ji spolu s informací, že jde o TEAM TEST.</p>
+<h3>Testovací databáze po čase zmizela</h3>
+<p>Free PostgreSQL expiruje po 30 dnech. Pro další testovací kolo se vytvoří nová databáze / nový TEAM TEST. Skutečný provoz bude používat persistentní placenou databázi a zálohy.</p>
+<h2>G. Co TEAM TEST už umí</h2>
+<div class="bullet">• více lidí může současně používat společná data;</div>
+<div class="bullet">• klientské karty a historie výkonů;</div>
+<div class="bullet">• individuální výkony a KA1/KA2/KA3;</div>
+<div class="bullet">• jedna skupinová akce s více účastníky;</div>
+<div class="bullet">• denní zápisy v kalendáři, včetně více zápisů za den a historie editací;</div>
+<div class="bullet">• pracovníci a role;</div>
+<div class="bullet">• upravitelné číselníky přímo v systému;</div>
+<div class="bullet">• ochrana historických výkonů při změně/deaktivaci číselníku;</div>
+<div class="bullet">• ochrana proti tichému přepsání při souběžné editaci stejného záznamu;</div>
+<div class="bullet">• indikátory s dohledáním zdrojových elektronických záznamů;</div>
+<div class="bullet">• CSV/XLSX kontrolní výstupy;</div>
+<div class="bullet">• responzivní použití na počítači i telefonu.</div>
+<h2>H. Funkční poznámky, které nejsou chyba</h2>
+<div class="bullet">• Hodinové limity KA3 jsou v TEAM TESTU **upozornění**, nikoli tvrdá blokace. Je to záměr podle zadání.</div>
+<div class="bullet">• Číselník, který už byl použit v historii, se nemá „vymazat z minulosti“. Správce jej může deaktivovat nebo upravit; historický záznam zůstává čitelný.</div>
+<div class="bullet">• Čtenář/reporting nemá mít přístup ke klientským kartám ani detailním osobním exportům. Je to bezpečnostní omezení, ne chyba.</div>
+<div class="bullet">• Klientské dokumenty se v této verzi neevidují jako nahrané citlivé soubory do aplikace; systém pracuje s metadaty/odkazem na řízené úložiště.</div>
+<div class="bullet">• U indikátorů se jedna osoba zapojená do více relevantních aktivit nemá započítat opakovaně.</div>
+<h2>I. Kdy TEAM TEST ukončit</h2>
+<p>TEAM TEST je určený k připomínkování logiky a použitelnosti. Jakmile tým odsouhlasí strukturu, přejde se na produkční konfiguraci: Google Workspace, <code>evidence.spolekvesna.cz</code>, persistentní PostgreSQL, externí zálohy a restore test, finální GDPR/provozní kontrola a řízený import skutečných dat.</p></body></html>

@@ -1,0 +1,13 @@
+{
+  "product": "Vesna Club – evidence klientů a výkonů",
+  "release_date": "2026-10-20",
+  "release_status": "deployment-ready package; production activation requires external accounts, DNS, GDPR approval and final live-data cutover",
+  "automated_tests": {"passed": 17, "failed": 0},
+  "catalog_seed_items": 216,
+  "database": {"development": "SQLite", "production": "PostgreSQL"},
+  "production_auth": "Google Workspace OAuth",
+  "production_backup": "daily DB backup to separate S3-compatible object storage; weekly actual restore test",
+  "docker_build_local": false,
+  "docker_build_note": "Docker CLI/daemon was not available in the build environment; Dockerfile and render.yaml were validated without claiming an image build.",
+  "real_client_data_in_release": false
+}

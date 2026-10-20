@@ -1,0 +1,18 @@
+Vesna Club TEAM TEST – kontrola balíku
+Datum: 2026-10-20
+
+- Python compile: OK
+- render.yaml YAML parse: OK
+- render-production.yaml YAML parse: OK
+- Automatické akceptační testy: 17/17 PASSED
+- Čistá migrace SQLite pro smoke test: OK
+- Seed syntetických dat: OK
+- Číselníky po seedu: 216 položek
+- Testovací pracovníci: min. 3 role
+- Testovací klienti: min. 6 syntetických osob
+- /health: HTTP 200
+- /login: HTTP 200
+- TEAM TEST banner na loginu: OK
+- Testovací účty zobrazené na loginu: OK
+
+Pozn.: Render Blueprint nebyl odeslán do cizího Render účtu; konfigurace je připravena podle aktuálního Blueprint schématu Render. TEAM TEST je určen pouze pro syntetická data.

@@ -1,0 +1,16 @@
+Ahoj,
+
+posílám odkaz na testovací verzi nové evidence Vesna Club. Nic si nemusíte instalovat, aplikace funguje normálně v prohlížeči na počítači i telefonu.
+
+PROSÍM: do testovací verze nevkládejte žádné skutečné klientské nebo jiné osobní údaje. Používejte jen vymyšlené osoby a informace.
+
+Odkaz:
+[DOPLNIT PO NASAZENÍ]
+
+Přihlášení vám pošlu zvlášť / viz domluvené testovací účty.
+
+Zkuste hlavně běžnou práci: klienta, výkon, skupinovou aktivitu, denní zápis, hledání v historii a práci z telefonu. Kdo má účet správce, ať zkusí i číselníky a pracovníky.
+
+Když narazíte na problém, pošlete prosím screenshot a napište: jakou roli jste používali, co jste udělali, co se stalo a co jste čekali.
+
+Pozn.: test běží na bezplatném serveru, takže pokud ho nikdo chvíli nepoužívá, první otevření může trvat zhruba minutu. To není vlastnost budoucí ostré verze.
