@@ -310,37 +310,33 @@ async def client_update(client_id:int,request:Request,db:Session=Depends(get_db)
     db.flush(); c=db.get(Client,client_id); audit_log(db,user.id,'update','client',c.client_id,before=before,after=snapshot(c),remote_ip=ip(request)); db.commit(); return RedirectResponse(f"/clients/{client_id}",303)
 
 @app.get("/clients/{client_id}",response_class=HTMLResponse)
-def client_detail(client_id:int,request:Request,start:str="",end:str="",kind:str="",worker:str="",activity:str="",db:Session=Depends(get_db)):
+def client_detail(client_id:int,request:Request,start:str="",end:str="",kind:str="",worker:str="",ka:str="",followups:str="",db:Session=Depends(get_db)):
     user=require_user(request,db,[ROLE_ADMIN,ROLE_WORKER]); c=db.get(Client,client_id)
     if not c: raise HTTPException(404)
     services=db.scalars(select(IndividualService).options(selectinload(IndividualService.worker)).where(IndividualService.client_id==c.id).order_by(IndividualService.service_date.desc())).all()
     parts=db.scalars(select(EventParticipant).options(selectinload(EventParticipant.event)).where(EventParticipant.client_id==c.id).order_by(EventParticipant.id.desc())).all()
     docs=db.scalars(select(Document).options(selectinload(Document.worker)).where(Document.client_id==c.id).order_by(Document.inserted_date.desc())).all()
-    event_ids=sorted({p.event_id for p in parts})
-    event_workers={}
+    event_ids=sorted({p.event_id for p in parts}); event_workers={}
     if event_ids:
-        for event_id,name in db.execute(select(EventWorker.event_id,Worker.name).join(Worker,Worker.id==EventWorker.worker_id).where(EventWorker.event_id.in_(event_ids))).all():
-            event_workers.setdefault(event_id,[]).append(name)
+        for event_id,name in db.execute(select(EventWorker.event_id,Worker.name).join(Worker,Worker.id==EventWorker.worker_id).where(EventWorker.event_id.in_(event_ids))).all(): event_workers.setdefault(event_id,[]).append(name)
     names=catalog_name_map(db); timeline=[]; ka_summary={}
     for svc in services:
         activity_name=historical_catalog_name(svc,'activity_id',names) or ''
-        ka_name=svc.subactivity or svc.ka
-        ka_summary[ka_name]=ka_summary.get(ka_name,0)+1
-        timeline.append({"date":svc.service_date,"kind":"individuální podpora","text":svc.description or activity_name or 'Výkon',"meta":f"{svc.minutes} min · {ka_name} · {svc.worker.name}","worker":svc.worker.name,"activity":activity_name})
+        ka_name=svc.subactivity or svc.ka; ka_summary[ka_name]=ka_summary.get(ka_name,0)+1
+        timeline.append({"date":svc.service_date,"kind":"individuální podpora","text":svc.description or activity_name or 'Výkon',"meta":f"{svc.minutes} min · {SUBACTIVITY_LABELS.get(ka_name,KA_LABELS.get(ka_name,ka_name))} · {svc.worker.name}","worker":svc.worker.name,"ka":ka_name,"followup":bool(svc.follow_up_date),"url":f"/services/{svc.id}/edit","action":"Zobrazit / upravit"})
     for part in parts:
-        ka_name=part.event.subactivity or part.event.ka
-        ka_summary[ka_name]=ka_summary.get(ka_name,0)+1
-        workers=', '.join(event_workers.get(part.event_id,[]))
-        timeline.append({"date":part.event.event_date,"kind":"skupinová účast","text":part.event.title,"meta":f"{ka_name}"+(f" · {workers}" if workers else ''),"worker":workers,"activity":f"{part.event.event_type} {part.event.title}"})
+        ka_name=part.event.subactivity or part.event.ka; ka_summary[ka_name]=ka_summary.get(ka_name,0)+1; workers=', '.join(event_workers.get(part.event_id,[]))
+        timeline.append({"date":part.event.event_date,"kind":"skupinová účast","text":part.event.title,"meta":f"{SUBACTIVITY_LABELS.get(ka_name,KA_LABELS.get(ka_name,ka_name))}"+(f" · {workers}" if workers else ''),"worker":workers,"ka":ka_name,"followup":False,"url":f"/event-participants/{part.id}/edit","action":"Upravit účast"})
     for doc in docs:
-        timeline.append({"date":doc.inserted_date,"kind":"dokument","text":doc.name,"meta":f"{doc.kind or ''}"+(f" · {doc.worker.name}" if doc.worker else ''),"worker":doc.worker.name if doc.worker else '',"activity":""})
-    sd=parse_date(start); ed=parse_date(end); worker_q=worker.strip().lower(); activity_q=activity.strip().lower()
-    timeline=[x for x in timeline if (not sd or x['date']>=sd) and (not ed or x['date']<=ed) and (not kind or x['kind']==kind) and (not worker_q or worker_q in (x.get('worker') or '').lower()) and (not activity_q or activity_q in (x.get('activity') or '').lower())]
+        timeline.append({"date":doc.inserted_date,"kind":"dokument","text":doc.name,"meta":f"{doc.kind or ''}"+(f" · {doc.worker.name}" if doc.worker else ''),"worker":doc.worker.name if doc.worker else '',"ka":"","followup":False,"url":f"/documents/{doc.id}/edit","action":"Zobrazit / upravit","drive_ref":doc.drive_ref})
+    sd=parse_date(start); ed=parse_date(end); worker_q=worker.strip().lower()
+    timeline=[x for x in timeline if (not sd or x['date']>=sd) and (not ed or x['date']<=ed) and (not kind or x['kind']==kind) and (not worker_q or worker_q in (x.get('worker') or '').lower()) and (not ka or x.get('ka')==ka) and (followups!='1' or x.get('followup'))]
     timeline.sort(key=lambda x:x['date'] or date.min,reverse=True)
     audits=db.scalars(select(AuditLog).where(AuditLog.entity_type=='client',AuditLog.entity_id==c.client_id).order_by(AuditLog.created_at.desc())).all()
     totals={"service_count":len(services),"minutes":sum(s.minutes for s in services),"event_count":len(parts),"document_count":len(docs),"followups":sum(1 for s in services if s.follow_up_date)}
-    filters={'start':start,'end':end,'kind':kind,'worker':worker,'activity':activity}
-    return templates.TemplateResponse(request,"client_detail.html",ctx(request,db,client=c,timeline=timeline,audits=audits,worker_names=worker_name_map(db),totals=totals,ka_summary=sorted(ka_summary.items()),filters=filters,duplicate_warning=request.query_params.get('duplicate')=='1'))
+    filters={'start':start,'end':end,'kind':kind,'worker':worker,'ka':ka,'followups':followups}
+    return templates.TemplateResponse(request,"client_detail.html",ctx(request,db,client=c,timeline=timeline,audits=audits,worker_names=worker_name_map(db),totals=totals,ka_summary=sorted(ka_summary.items()),filters=filters,ka_options=ka_options(),subactivity_options=subactivity_options(),duplicate_warning=request.query_params.get('duplicate')=='1'))
+
 
 @app.get("/services",response_class=HTMLResponse)
 def services_list(request:Request,start:str="",end:str="",ka:str="",db:Session=Depends(get_db)):
