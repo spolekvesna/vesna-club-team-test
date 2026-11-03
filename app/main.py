@@ -396,14 +396,20 @@ async def service_update(service_id:int,request:Request,db:Session=Depends(get_d
 
 
 @app.get("/events",response_class=HTMLResponse)
-def events_list(request:Request,db:Session=Depends(get_db)):
-    require_user(request,db,[ROLE_ADMIN,ROLE_WORKER]); events=db.scalars(select(Event).order_by(Event.event_date.desc(),Event.id.desc())).all(); counts=dict(db.execute(select(EventParticipant.event_id,func.count()).where(EventParticipant.client_id.is_not(None),EventParticipant.attendance_status=='present').group_by(EventParticipant.event_id)).all()); return templates.TemplateResponse(request,"events.html",ctx(request,db,events=events,counts=counts))
+def events_list(request:Request,start:str="",end:str="",event_type:str="",db:Session=Depends(get_db)):
+    require_user(request,db,[ROLE_ADMIN,ROLE_WORKER]); stmt=select(Event).order_by(Event.event_date.desc(),Event.id.desc())
+    if start: stmt=stmt.where(Event.event_date>=parse_date(start))
+    if end: stmt=stmt.where(Event.event_date<=parse_date(end))
+    if event_type: stmt=stmt.where(Event.event_type==event_type)
+    events=db.scalars(stmt).all(); counts=dict(db.execute(select(EventParticipant.event_id,func.count()).where(EventParticipant.client_id.is_not(None),EventParticipant.attendance_status=='present').group_by(EventParticipant.event_id)).all())
+    return templates.TemplateResponse(request,"events.html",ctx(request,db,events=events,counts=counts,start=start,end=end,event_type=event_type,event_types=EVENT_TYPE_LABELS))
 
 def event_form_ctx(request,db,event=None,conflict=False):
     selected_clients=[]; selected_workers=[]; selected_inds=[]; guest_note=''
     if event:
         selected_clients=db.scalars(select(EventParticipant.client_id).where(EventParticipant.event_id==event.id,EventParticipant.client_id.is_not(None))).all(); selected_workers=db.scalars(select(EventWorker.worker_id).where(EventWorker.event_id==event.id)).all(); selected_inds=db.scalars(select(IndicatorRecord.indicator_code).where(IndicatorRecord.source_type=='event',IndicatorRecord.source_id==event.event_id)).all(); guests=db.scalars(select(EventParticipant.display_name).where(EventParticipant.event_id==event.id,EventParticipant.client_id.is_(None))).all(); guest_note='; '.join(x for x in guests if x)
-    return ctx(request,db,event=event,clients=db.scalars(select(Client).where(Client.status=='active').order_by(Client.last_name)).all(),workers=active_workers(db),today=date.today(),selected_clients=selected_clients,selected_workers=selected_workers,selected_indicators=selected_inds,guest_note=guest_note,selectable_indicators=selectable_indicators(),conflict=conflict)
+    clients=list(db.scalars(select(Client).where(Client.status=='active')).all()); clients.sort(key=client_sort_key)
+    return ctx(request,db,event=event,clients=clients,workers=active_workers(db),today=date.today(),selected_clients=selected_clients,selected_workers=selected_workers,selected_indicators=selected_inds,guest_note=guest_note,selectable_indicators=selectable_indicators(),conflict=conflict,ka_options=ka_options(),subactivity_options=subactivity_options(),event_types=EVENT_TYPE_LABELS)
 
 @app.get("/events/new",response_class=HTMLResponse)
 def event_new(request:Request,db:Session=Depends(get_db)):
@@ -416,7 +422,7 @@ async def parse_event_form(request):
 async def event_create(request:Request,db:Session=Depends(get_db)):
     user=require_user(request,db,[ROLE_ADMIN,ROLE_WORKER]); f,client_ids,worker_ids,inds=await parse_event_form(request); check_csrf(request,f.get('csrf'))
     if f.get('event_type')=='civic_orientation' and '026200' not in inds: inds.append('026200')
-    e=Event(event_id=uid('AKC'),title=f['title'],event_date=parse_date(f['event_date']),start_time=f.get('start_time') or None,duration_minutes=int(f['duration_minutes']) if f.get('duration_minutes') else None,ka=f.get('ka') or 'KA2',subactivity=f.get('subactivity') or None,event_type=f.get('event_type') or 'group_program',attendance_sheet_ref=f.get('attendance_sheet_ref') or None,notes=f.get('notes') or None,created_by_id=user.id)
+    e=Event(event_id=uid('AKC'),title=f['title'],event_date=parse_date(f['event_date']),start_time=f.get('start_time') or None,duration_minutes=int(f['duration_minutes']) if f.get('duration_minutes') else None,ka=f.get('ka') or 'KA2',subactivity=validated_subactivity(f.get('ka') or 'KA2',f.get('subactivity')),event_type=f.get('event_type') or 'group_program',attendance_sheet_ref=f.get('attendance_sheet_ref') or None,notes=f.get('notes') or None,created_by_id=user.id)
     db.add(e); db.flush();
     for wid in sorted(set(worker_ids)): db.add(EventWorker(event_id=e.id,worker_id=wid))
     for cid in sorted(set(client_ids)): db.add(EventParticipant(event_id=e.id,client_id=cid,participant_kind='project',attendance_status='present',eligible_project=True,transcribed_from_sheet=True if e.attendance_sheet_ref else False))
@@ -427,7 +433,8 @@ async def event_create(request:Request,db:Session=Depends(get_db)):
 def event_detail(event_id:int,request:Request,db:Session=Depends(get_db)):
     require_user(request,db,[ROLE_ADMIN,ROLE_WORKER]); e=db.get(Event,event_id)
     if not e: raise HTTPException(404)
-    participants=db.scalars(select(EventParticipant).options(selectinload(EventParticipant.client)).where(EventParticipant.event_id==e.id,EventParticipant.client_id.is_not(None))).all(); wids=db.scalars(select(EventWorker.worker_id).where(EventWorker.event_id==e.id)).all(); names=worker_name_map(db); return templates.TemplateResponse(request,"event_detail.html",ctx(request,db,event=e,participants=participants,worker_names=[names.get(x,'') for x in wids]))
+    participants=db.scalars(select(EventParticipant).options(selectinload(EventParticipant.client)).where(EventParticipant.event_id==e.id,EventParticipant.client_id.is_not(None))).all(); participants.sort(key=lambda p:client_sort_key(p.client)); wids=db.scalars(select(EventWorker.worker_id).where(EventWorker.event_id==e.id)).all(); names=worker_name_map(db)
+    return templates.TemplateResponse(request,"event_detail.html",ctx(request,db,event=e,participants=participants,worker_names=[names.get(x,'') for x in wids],event_type_label=EVENT_TYPE_LABELS.get(e.event_type,e.event_type),ka_label=SUBACTIVITY_LABELS.get(e.subactivity,KA_LABELS.get(e.ka,e.subactivity or e.ka))))
 
 @app.get("/events/{event_id}/edit",response_class=HTMLResponse)
 def event_edit(event_id:int,request:Request,db:Session=Depends(get_db)):
