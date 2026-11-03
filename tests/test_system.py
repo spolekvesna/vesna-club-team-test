@@ -270,3 +270,129 @@ def test_import_warns_about_missing_ka_and_uses_legacy_marker(tmp_path):
         apply_import(batch,db)
         svc=db.scalar(select(IndividualService).where(IndividualService.service_id=='VYK-IMP'))
         assert svc.ka=='legacy'
+
+
+def test_client_nickname_monitoring_filter_and_hidden_code():
+    with SessionLocal() as db:
+        c=Client(client_id='CLI-T-NICK',code='SECRET-CODE-77',nickname='Lili',first_name='Liliana',last_name='Testová',entry_date=date(2026,11,1),document_status='yes',status='active')
+        db.add(c); db.commit(); cid=c.id
+    tc=TestClient(app); login(tc)
+    r=tc.get('/clients?monitoring=yes')
+    assert r.status_code==200 and 'Lili' in r.text and 'Liliana Testová' in r.text
+    assert 'SECRET-CODE-77' not in r.text
+    card=tc.get(f'/clients/{cid}')
+    assert 'Monitorovací list' in card.text and 'Přezdívka' in card.text
+
+
+def test_client_card_links_to_service_document_and_individual_participation():
+    with SessionLocal() as db:
+        w=get_worker(db); c=make_client(db,'T-LINK','Link')
+        s=IndividualService(service_id='S-LINK',client_id=c.id,service_date=date(2026,11,20),minutes=30,worker_id=w.id,ka='KA3',subactivity='3.1',eligible_project=True)
+        db.add(s)
+        d=Document(document_id='D-LINK',client_id=c.id,name='Monitorovací list',kind='monitoring',inserted_date=date(2026,11,20),worker_id=w.id)
+        db.add(d)
+        e=Event(event_id='E-LINK',title='Kroužek',event_date=date(2026,11,20),ka='KA2',subactivity='2.1',event_type='children_program',created_by_id=w.id)
+        db.add(e); db.flush()
+        p=EventParticipant(event_id=e.id,client_id=c.id,participant_kind='project',attendance_status='present',eligible_project=True)
+        db.add(p); db.commit(); sid=s.id; did=d.id; pid=p.id; cid=c.id
+    tc=TestClient(app); login(tc)
+    r=tc.get(f'/clients/{cid}')
+    assert f'/services/{sid}/edit' in r.text
+    assert f'/documents/{did}/edit' in r.text
+    assert f'/event-participants/{pid}/edit' in r.text
+    assert f'?ka=2.1#history' in r.text
+
+
+def test_service_rejects_subactivity_from_wrong_ka():
+    with SessionLocal() as db:
+        w=get_worker(db); c=make_client(db,'T-KA','Ka'); cid=c.id; wid=w.id
+    tc=TestClient(app); login(tc)
+    token=csrf(tc,'/services/new')
+    payload={'csrf':token,'client_id':str(cid),'service_date':'2026-11-21','minutes':'30','worker_id':str(wid),'ka':'KA2','subactivity':'3.1','eligible_project':'true','transcribed_from_sheet':'false'}
+    r=tc.post('/services/new',data=payload,follow_redirects=False)
+    assert r.status_code==400
+
+
+def test_participant_edit_changes_only_selected_client_and_indicator_source():
+    with SessionLocal() as db:
+        w=get_worker(db); c1=make_client(db,'T-P1','Prvni'); c2=make_client(db,'T-P2','Druhy')
+        e=Event(event_id='E-PART-EDIT',title='Skupina',event_date=date(2026,11,22),ka='KA2',subactivity='2.3',event_type='community_event',created_by_id=w.id)
+        db.add(e); db.flush()
+        p1=EventParticipant(event_id=e.id,client_id=c1.id,participant_kind='project',attendance_status='present',eligible_project=True)
+        p2=EventParticipant(event_id=e.id,client_id=c2.id,participant_kind='project',attendance_status='present',eligible_project=True)
+        db.add_all([p1,p2]); db.flush(); sync_indicator_records(db,'event',e.event_id,e.event_date,[c1.id,c2.id],['026200']); db.commit(); p1id=p1.id; c1id=c1.id; c2id=c2.id
+    tc=TestClient(app); login(tc)
+    token=csrf(tc,f'/event-participants/{p1id}/edit')
+    r=tc.post(f'/event-participants/{p1id}/edit',data={'csrf':token,'attendance_status':'absent','eligible_project':'true','transcribed_from_sheet':'false'},follow_redirects=False)
+    assert r.status_code==303
+    with SessionLocal() as db:
+        a=db.get(EventParticipant,p1id); b=db.scalar(select(EventParticipant).where(EventParticipant.event_id==a.event_id,EventParticipant.client_id==c2id))
+        assert a.attendance_status=='absent' and b.attendance_status=='present'
+        ids=indicator_clients(db,'026200',date(2026,11,22),date(2026,11,22))
+        assert c1id not in ids and c2id in ids
+
+
+def test_event_and_control_filters_use_czech_choices():
+    tc=TestClient(app); login(tc)
+    events=tc.get('/events')
+    assert events.status_code==200 and 'Kroužky a skupiny' in events.text and 'Mezikulturní otevřená akce' in events.text
+    report=tc.get('/activity-report')
+    assert report.status_code==200 and 'Komunitní a rodinný integrační program' in report.text and '>Docházka do klubu<' in report.text
+    metrics=tc.get('/admin/metrics')
+    assert 'Projektové indikátory a výstupy' in metrics.text
+
+
+def test_document_can_be_opened_and_edited_from_client_context():
+    with SessionLocal() as db:
+        w=get_worker(db); c=make_client(db,'T-DOCEDIT','Dokument')
+        d=Document(document_id='D-EDIT',client_id=c.id,name='Původní dokument',kind='monitoring',drive_ref='https://drive.google.com/test',inserted_date=date(2026,11,23),worker_id=w.id,notes='původní')
+        db.add(d); db.commit(); did=d.id; cid=c.id
+    tc=TestClient(app); login(tc)
+    page=tc.get(f'/documents/{did}/edit'); assert page.status_code==200 and 'Původní dokument' in page.text and 'Otevřít dokument na Disku' in page.text
+    token=re.search(r'name="csrf" value="([^"]+)"',page.text).group(1); ver=re.search(r'name="version" value="(\d+)"',page.text).group(1)
+    r=tc.post(f'/documents/{did}/edit',data={'csrf':token,'version':ver,'name':'Upravený dokument','kind':'monitoring','inserted_date':'2026-11-23','drive_ref':'https://drive.google.com/test','notes':'upraveno'},follow_redirects=False)
+    assert r.status_code==303 and f'/clients/{cid}' in r.headers['location']
+    with SessionLocal() as db: assert db.get(Document,did).name=='Upravený dokument'
+
+
+def test_dashboard_metrics_are_clickable_filters():
+    tc=TestClient(app); login(tc)
+    r=tc.get('/'); assert r.status_code==200
+    assert '/clients?status=active' in r.text
+    assert '/services?start=' in r.text
+    assert '/events?start=' in r.text
+    assert '/reports/026000' in r.text
+
+
+def test_client_ka_filter_includes_child_subactivities():
+    with SessionLocal() as db:
+        w=get_worker(db); c=make_client(db,'T-KAFILTER','Filtr'); cid=c.id
+        db.add(IndividualService(service_id='S-KAFILTER',client_id=cid,service_date=date(2026,11,24),minutes=30,worker_id=w.id,ka='KA3',subactivity='3.1',description='Podpora pro filtr KA3',eligible_project=True))
+        db.commit()
+    tc=TestClient(app); login(tc)
+    assert 'Podpora pro filtr KA3' in tc.get(f'/clients/{cid}?ka=KA3').text
+    assert 'Podpora pro filtr KA3' not in tc.get(f'/clients/{cid}?ka=KA2').text
+
+
+def test_monitoring_no_filter_matches_old_unknown_status_display():
+    with SessionLocal() as db:
+        c=make_client(db,'T-UNKNOWN','Nezjištěný'); c.document_status='unknown'; db.commit()
+    tc=TestClient(app); login(tc)
+    assert 'Nezjištěný' in tc.get('/clients?monitoring=no').text
+    assert 'Nezjištěný' not in tc.get('/clients?monitoring=yes').text
+
+
+def test_last_participant_can_return_without_losing_indicator_selection():
+    with SessionLocal() as db:
+        w=get_worker(db); c=make_client(db,'T-RETURN','Navrat'); cid=c.id
+        e=Event(event_id='E-RETURN',title='Poslední účastník',event_date=date(2026,11,25),ka='KA2',subactivity='2.1',event_type='group_program',created_by_id=w.id)
+        db.add(e); db.flush()
+        p=EventParticipant(event_id=e.id,client_id=cid,participant_kind='project',attendance_status='present',eligible_project=True)
+        db.add(p); db.flush(); sync_indicator_records(db,'event',e.event_id,e.event_date,[cid],['026200']); db.commit(); pid=p.id
+    tc=TestClient(app); login(tc)
+    for status in ['absent','present']:
+        token=csrf(tc,f'/event-participants/{pid}/edit')
+        response=tc.post(f'/event-participants/{pid}/edit',data={'csrf':token,'attendance_status':status,'eligible_project':'true','transcribed_from_sheet':'false'},follow_redirects=False)
+        assert response.status_code==303
+        with SessionLocal() as db:
+            assert (cid in indicator_clients(db,'026200',date(2026,11,25),date(2026,11,25))) == (status=='present')

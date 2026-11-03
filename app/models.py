@@ -26,6 +26,7 @@ class Client(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     client_id: Mapped[str] = mapped_column(String(80), unique=True, index=True)
     code: Mapped[str] = mapped_column(String(80), unique=True, index=True)
+    nickname: Mapped[Optional[str]] = mapped_column(String(120), nullable=True, index=True)
     first_name: Mapped[str] = mapped_column(String(120), index=True)
     last_name: Mapped[str] = mapped_column(String(120), index=True)
     birth_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
