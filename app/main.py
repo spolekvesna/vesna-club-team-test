@@ -79,6 +79,63 @@ async def security_headers(request: Request, call_next):
 templates = Jinja2Templates(directory=str(BASE_DIR / "app/templates"))
 
 
+def czdate(value):
+    if not value:
+        return "—"
+    if isinstance(value, (date, datetime)):
+        return value.strftime("%d.%m.%Y")
+    return str(value)
+
+templates.env.filters["czdate"] = czdate
+
+KA_LABELS = {
+    "KA1": "KA1 · Klub Re/generace",
+    "KA2": "KA2 · Strukturované skupiny",
+    "KA3": "KA3 · Individuální podpora",
+}
+SUBACTIVITY_LABELS = {
+    "2.1": "2.1 · Program pro děti (8–15 let)",
+    "2.2": "2.2 · Program pro mládež a mladé dospělé (16–26 let)",
+    "2.3": "2.3 · Komunitní a rodinný integrační program",
+    "2.4": "2.4 · Mezikulturní otevřené akce",
+    "3.1": "3.1 · Kariérní a vzdělávací poradenství",
+    "3.2": "3.2 · Mentoring",
+    "3.3": "3.3 · Psychologické poradenství",
+}
+KA_SUBACTIVITIES = {"KA1": [], "KA2": ["2.1", "2.2", "2.3", "2.4"], "KA3": ["3.1", "3.2", "3.3"]}
+EVENT_TYPE_LABELS = {
+    "club_attendance": "Docházka do klubu",
+    "group_program": "Skupinový program / kroužek",
+    "children_program": "Program pro děti",
+    "youth_program": "Program pro mládež",
+    "civic_orientation": "Kurz občanské orientace",
+    "community_event": "Komunitní a rodinný integrační program",
+    "intercultural_open": "Mezikulturní otevřená akce",
+    "other": "Jiná akce",
+}
+
+def client_label(client):
+    full=f"{client.first_name} {client.last_name}".strip()
+    return f"{client.nickname} · {full}" if getattr(client, "nickname", None) else full
+
+def client_sort_key(client):
+    return ((client.nickname or f"{client.last_name} {client.first_name}").casefold(), client.last_name.casefold(), client.first_name.casefold())
+
+def ka_options():
+    return [(code, label) for code, label in KA_LABELS.items()]
+
+def subactivity_options():
+    return [(code, SUBACTIVITY_LABELS[code], parent) for parent, codes in KA_SUBACTIVITIES.items() for code in codes]
+
+def validated_subactivity(ka: str, subactivity: str | None):
+    sub=(subactivity or "").strip()
+    if not sub:
+        return None
+    if sub not in KA_SUBACTIVITIES.get(ka, []):
+        raise HTTPException(400, f"Podaktivita {sub} nepatří do {ka}.")
+    return sub
+
+
 def ctx(request: Request, db: Session, **extra):
     user = get_current_user(request, db)
     out = {"request": request, "user": user, "csrf": ensure_csrf(request), "app_env": settings.app_env}
@@ -131,6 +188,16 @@ def sync_indicator_records(db: Session, source_type: str, source_id: str, record
         for code in sorted(set(codes)):
             db.add(IndicatorRecord(indicator_code=code, client_id=client_id, record_date=record_date, source_type=source_type, source_id=source_id, eligible=True, transcribed_from_sheet=transcribed, attendance_sheet_ref=sheet_ref))
 
+
+
+def sync_event_indicators(db: Session, event: Event, codes: list[str]):
+    """Keep indicator choices while a participant is temporarily absent/ineligible."""
+    participants=db.scalars(select(EventParticipant).where(EventParticipant.event_id==event.id,EventParticipant.client_id.is_not(None))).all()
+    db.execute(delete(IndicatorRecord).where(IndicatorRecord.source_type=='event',IndicatorRecord.source_id==event.event_id))
+    for participant in participants:
+        eligible=participant.attendance_status=='present' and participant.eligible_project and participant.participant_kind=='project'
+        for code in sorted(set(codes)):
+            db.add(IndicatorRecord(indicator_code=code,client_id=participant.client_id,record_date=event.event_date,source_type='event',source_id=event.event_id,eligible=eligible,transcribed_from_sheet=participant.transcribed_from_sheet,attendance_sheet_ref=event.attendance_sheet_ref))
 
 def historical_catalog_name(service: IndividualService, field: str, current_names: dict) -> str:
     try:
@@ -208,16 +275,19 @@ def dashboard(request: Request, db: Session=Depends(get_db)):
         "last_restore":last_restore.finished_at.strftime('%d.%m.%Y %H:%M') if last_restore and last_restore.finished_at else None,
         "open_followups":db.scalar(select(func.count()).select_from(IndividualService).where(IndividualService.follow_up_date.is_not(None),IndividualService.follow_up_date<=today)) or 0,
     }
-    return templates.TemplateResponse(request,"dashboard.html",ctx(request,db,title="Přehled",stats=stats))
+    return templates.TemplateResponse(request,"dashboard.html",ctx(request,db,title="Přehled",stats=stats,month_start=first.isoformat()))
 
 @app.get("/clients",response_class=HTMLResponse)
-def clients_list(request:Request,q:str="",status:str="",db:Session=Depends(get_db)):
-    user=require_user(request,db,[ROLE_ADMIN,ROLE_WORKER])
-    stmt=select(Client).order_by(Client.last_name,Client.first_name)
+def clients_list(request:Request,q:str="",status:str="",monitoring:str="",db:Session=Depends(get_db)):
+    require_user(request,db,[ROLE_ADMIN,ROLE_WORKER])
+    stmt=select(Client)
     if q:
-        term=f"%{q.strip()}%"; stmt=stmt.where(or_(Client.code.ilike(term),Client.first_name.ilike(term),Client.last_name.ilike(term)))
+        term=f"%{q.strip()}%"; stmt=stmt.where(or_(Client.nickname.ilike(term),Client.code.ilike(term),Client.first_name.ilike(term),Client.last_name.ilike(term)))
     if status: stmt=stmt.where(Client.status==status)
-    return templates.TemplateResponse(request,"clients.html",ctx(request,db,title="Klienti",clients=db.scalars(stmt).all(),q=q,status=status))
+    if monitoring=="yes": stmt=stmt.where(Client.document_status=="yes")
+    elif monitoring=="no": stmt=stmt.where(or_(Client.document_status!="yes",Client.document_status.is_(None)))
+    rows=list(db.scalars(stmt).all()); rows.sort(key=client_sort_key)
+    return templates.TemplateResponse(request,"clients.html",ctx(request,db,title="Klienti",clients=rows,q=q,status=status,monitoring=monitoring))
 
 @app.get("/clients/new",response_class=HTMLResponse)
 def client_new(request:Request,db:Session=Depends(get_db)):
@@ -229,7 +299,7 @@ async def client_create(request:Request,db:Session=Depends(get_db)):
     user=require_user(request,db,[ROLE_ADMIN,ROLE_WORKER]); f=await request.form(); check_csrf(request,f.get('csrf'))
     birth=parse_date(f.get('birth_date'))
     duplicate=db.scalar(select(Client).where(func.lower(Client.first_name)==str(f.get('first_name')).lower(),func.lower(Client.last_name)==str(f.get('last_name')).lower(),Client.birth_date==birth)) if birth else None
-    c=Client(client_id=uid('CLI'),code=str(f['code']).strip(),first_name=str(f['first_name']).strip(),last_name=str(f['last_name']).strip(),birth_date=birth,entry_date=parse_date(f.get('entry_date')),contact=f.get('contact') or None,fewer_opportunities=True if f.get('fewer')=='yes' else False if f.get('fewer')=='no' else None,document_status=f.get('document_status') or 'unknown',drive_ref=f.get('drive_ref') or None,status=f.get('status') or 'active',notes=f.get('notes') or None)
+    c=Client(client_id=uid('CLI'),code=str(f['code']).strip(),nickname=(f.get('nickname') or '').strip() or None,first_name=str(f['first_name']).strip(),last_name=str(f['last_name']).strip(),birth_date=birth,entry_date=parse_date(f.get('entry_date')),contact=f.get('contact') or None,fewer_opportunities=True if f.get('fewer')=='yes' else False if f.get('fewer')=='no' else None,document_status='yes' if f.get('document_status')=='yes' else 'no',status=f.get('status') or 'active',notes=f.get('notes') or None)
     db.add(c); db.flush(); audit_log(db,user.id,'create','client',c.client_id,after=snapshot(c),remote_ip=ip(request)); db.commit()
     return RedirectResponse(f"/clients/{c.id}"+('?duplicate=1' if duplicate else ''),303)
 
@@ -244,44 +314,39 @@ async def client_update(client_id:int,request:Request,db:Session=Depends(get_db)
     user=require_user(request,db,[ROLE_ADMIN,ROLE_WORKER]); f=await request.form(); check_csrf(request,f.get('csrf')); c=db.get(Client,client_id)
     if not c: raise HTTPException(404)
     expected=int(f.get('version',0)); before=snapshot(c)
-    values=dict(code=str(f['code']).strip(),first_name=str(f['first_name']).strip(),last_name=str(f['last_name']).strip(),birth_date=parse_date(f.get('birth_date')),entry_date=parse_date(f.get('entry_date')),contact=f.get('contact') or None,fewer_opportunities=True if f.get('fewer')=='yes' else False if f.get('fewer')=='no' else None,document_status=f.get('document_status') or 'unknown',drive_ref=f.get('drive_ref') or None,status=f.get('status') or 'active',notes=f.get('notes') or None,version=expected+1,updated_at=datetime.now(timezone.utc).replace(tzinfo=None))
+    values=dict(code=str(f['code']).strip(),nickname=(f.get('nickname') or '').strip() or None,first_name=str(f['first_name']).strip(),last_name=str(f['last_name']).strip(),birth_date=parse_date(f.get('birth_date')),entry_date=parse_date(f.get('entry_date')),contact=f.get('contact') or None,fewer_opportunities=True if f.get('fewer')=='yes' else False if f.get('fewer')=='no' else None,document_status='yes' if f.get('document_status')=='yes' else 'no',status=f.get('status') or 'active',notes=f.get('notes') or None,version=expected+1,updated_at=datetime.now(timezone.utc).replace(tzinfo=None))
     res=db.execute(update(Client).where(Client.id==client_id,Client.version==expected).values(**values))
     if res.rowcount!=1:
         db.rollback(); c=db.get(Client,client_id); return templates.TemplateResponse(request,"client_form.html",ctx(request,db,client=c,suggested_code='',conflict=True,duplicate_warning=False),status_code=409)
     db.flush(); c=db.get(Client,client_id); audit_log(db,user.id,'update','client',c.client_id,before=before,after=snapshot(c),remote_ip=ip(request)); db.commit(); return RedirectResponse(f"/clients/{client_id}",303)
 
 @app.get("/clients/{client_id}",response_class=HTMLResponse)
-def client_detail(client_id:int,request:Request,start:str="",end:str="",kind:str="",worker:str="",activity:str="",db:Session=Depends(get_db)):
+def client_detail(client_id:int,request:Request,start:str="",end:str="",kind:str="",worker:str="",ka:str="",followups:str="",db:Session=Depends(get_db)):
     user=require_user(request,db,[ROLE_ADMIN,ROLE_WORKER]); c=db.get(Client,client_id)
     if not c: raise HTTPException(404)
     services=db.scalars(select(IndividualService).options(selectinload(IndividualService.worker)).where(IndividualService.client_id==c.id).order_by(IndividualService.service_date.desc())).all()
     parts=db.scalars(select(EventParticipant).options(selectinload(EventParticipant.event)).where(EventParticipant.client_id==c.id).order_by(EventParticipant.id.desc())).all()
     docs=db.scalars(select(Document).options(selectinload(Document.worker)).where(Document.client_id==c.id).order_by(Document.inserted_date.desc())).all()
-    event_ids=sorted({p.event_id for p in parts})
-    event_workers={}
+    event_ids=sorted({p.event_id for p in parts}); event_workers={}
     if event_ids:
-        for event_id,name in db.execute(select(EventWorker.event_id,Worker.name).join(Worker,Worker.id==EventWorker.worker_id).where(EventWorker.event_id.in_(event_ids))).all():
-            event_workers.setdefault(event_id,[]).append(name)
+        for event_id,name in db.execute(select(EventWorker.event_id,Worker.name).join(Worker,Worker.id==EventWorker.worker_id).where(EventWorker.event_id.in_(event_ids))).all(): event_workers.setdefault(event_id,[]).append(name)
     names=catalog_name_map(db); timeline=[]; ka_summary={}
     for svc in services:
         activity_name=historical_catalog_name(svc,'activity_id',names) or ''
-        ka_name=svc.subactivity or svc.ka
-        ka_summary[ka_name]=ka_summary.get(ka_name,0)+1
-        timeline.append({"date":svc.service_date,"kind":"individuální podpora","text":svc.description or activity_name or 'Výkon',"meta":f"{svc.minutes} min · {ka_name} · {svc.worker.name}","worker":svc.worker.name,"activity":activity_name})
+        ka_name=svc.subactivity or svc.ka; ka_summary[ka_name]=ka_summary.get(ka_name,0)+1
+        timeline.append({"date":svc.service_date,"kind":"individuální podpora","text":svc.description or activity_name or 'Výkon',"meta":f"{svc.minutes} min · {SUBACTIVITY_LABELS.get(ka_name,KA_LABELS.get(ka_name,ka_name))} · {svc.worker.name}","worker":svc.worker.name,"ka":ka_name,"followup":bool(svc.follow_up_date),"url":f"/services/{svc.id}/edit","action":"Zobrazit / upravit"})
     for part in parts:
-        ka_name=part.event.subactivity or part.event.ka
-        ka_summary[ka_name]=ka_summary.get(ka_name,0)+1
-        workers=', '.join(event_workers.get(part.event_id,[]))
-        timeline.append({"date":part.event.event_date,"kind":"skupinová účast","text":part.event.title,"meta":f"{ka_name}"+(f" · {workers}" if workers else ''),"worker":workers,"activity":f"{part.event.event_type} {part.event.title}"})
+        ka_name=part.event.subactivity or part.event.ka; ka_summary[ka_name]=ka_summary.get(ka_name,0)+1; workers=', '.join(event_workers.get(part.event_id,[]))
+        timeline.append({"date":part.event.event_date,"kind":"skupinová účast","text":part.event.title,"meta":f"{SUBACTIVITY_LABELS.get(ka_name,KA_LABELS.get(ka_name,ka_name))}"+(f" · {workers}" if workers else ''),"worker":workers,"ka":ka_name,"followup":False,"url":f"/event-participants/{part.id}/edit","action":"Upravit účast"})
     for doc in docs:
-        timeline.append({"date":doc.inserted_date,"kind":"dokument","text":doc.name,"meta":f"{doc.kind or ''}"+(f" · {doc.worker.name}" if doc.worker else ''),"worker":doc.worker.name if doc.worker else '',"activity":""})
-    sd=parse_date(start); ed=parse_date(end); worker_q=worker.strip().lower(); activity_q=activity.strip().lower()
-    timeline=[x for x in timeline if (not sd or x['date']>=sd) and (not ed or x['date']<=ed) and (not kind or x['kind']==kind) and (not worker_q or worker_q in (x.get('worker') or '').lower()) and (not activity_q or activity_q in (x.get('activity') or '').lower())]
+        timeline.append({"date":doc.inserted_date,"kind":"dokument","text":doc.name,"meta":f"{doc.kind or ''}"+(f" · {doc.worker.name}" if doc.worker else ''),"worker":doc.worker.name if doc.worker else '',"ka":"","followup":False,"url":f"/documents/{doc.id}/edit","action":"Zobrazit / upravit","drive_ref":doc.drive_ref})
+    sd=parse_date(start); ed=parse_date(end); worker_q=worker.strip().lower()
+    timeline=[x for x in timeline if (not sd or x['date']>=sd) and (not ed or x['date']<=ed) and (not kind or x['kind']==kind) and (not worker_q or worker_q in (x.get('worker') or '').lower()) and (not ka or x.get('ka')==ka or x.get('ka') in KA_SUBACTIVITIES.get(ka, [])) and (followups!='1' or x.get('followup'))]
     timeline.sort(key=lambda x:x['date'] or date.min,reverse=True)
     audits=db.scalars(select(AuditLog).where(AuditLog.entity_type=='client',AuditLog.entity_id==c.client_id).order_by(AuditLog.created_at.desc())).all()
     totals={"service_count":len(services),"minutes":sum(s.minutes for s in services),"event_count":len(parts),"document_count":len(docs),"followups":sum(1 for s in services if s.follow_up_date)}
-    filters={'start':start,'end':end,'kind':kind,'worker':worker,'activity':activity}
-    return templates.TemplateResponse(request,"client_detail.html",ctx(request,db,client=c,timeline=timeline,audits=audits,worker_names=worker_name_map(db),totals=totals,ka_summary=sorted(ka_summary.items()),filters=filters,duplicate_warning=request.query_params.get('duplicate')=='1'))
+    filters={'start':start,'end':end,'kind':kind,'worker':worker,'ka':ka,'followups':followups}
+    return templates.TemplateResponse(request,"client_detail.html",ctx(request,db,client=c,timeline=timeline,audits=audits,worker_names=worker_name_map(db),totals=totals,ka_summary=sorted(ka_summary.items()),filters=filters,ka_options=ka_options(),subactivity_options=subactivity_options(),duplicate_warning=request.query_params.get('duplicate')=='1'))
 
 @app.get("/services",response_class=HTMLResponse)
 def services_list(request:Request,start:str="",end:str="",ka:str="",db:Session=Depends(get_db)):
@@ -290,15 +355,15 @@ def services_list(request:Request,start:str="",end:str="",ka:str="",db:Session=D
     if end: stmt=stmt.where(IndividualService.service_date<=parse_date(end))
     if ka: stmt=stmt.where(or_(IndividualService.ka==ka,IndividualService.subactivity==ka))
     services=db.scalars(stmt).all(); names=catalog_name_map(db)
-    for svc in services: svc.display_activity=historical_catalog_name(svc,'activity_id',names)
-    return templates.TemplateResponse(request,"services.html",ctx(request,db,services=services,catalog_names=names,start=start,end=end,ka=ka))
+    for svc in services: svc.display_activity=historical_catalog_name(svc,'activity_id',names); svc.client_display=client_label(svc.client)
+    return templates.TemplateResponse(request,"services.html",ctx(request,db,services=services,catalog_names=names,start=start,end=end,ka=ka,ka_options=ka_options(),subactivity_options=subactivity_options()))
 
 
 def service_form_ctx(request,db,service=None,selected_client=0,conflict=False,limit_warning=None):
-    cata=catalogs(db,include_inactive=bool(service))
-    selected=[]
+    cata=catalogs(db,include_inactive=bool(service)); selected=[]
     if service: selected=db.scalars(select(IndicatorRecord.indicator_code).where(IndicatorRecord.source_type=='service',IndicatorRecord.source_id==service.service_id)).all()
-    return ctx(request,db,service=service,clients=db.scalars(select(Client).where(Client.status=='active').order_by(Client.last_name)).all(),workers=active_workers(db),catalog=cata,selected_client=selected_client,today=date.today(),selectable_indicators=selectable_indicators(),selected_indicators=selected,conflict=conflict,limit_warning=limit_warning)
+    clients=list(db.scalars(select(Client).where(Client.status=='active')).all()); clients.sort(key=client_sort_key)
+    return ctx(request,db,service=service,clients=clients,workers=active_workers(db),catalog=cata,selected_client=selected_client,today=date.today(),selectable_indicators=selectable_indicators(),selected_indicators=selected,conflict=conflict,limit_warning=limit_warning,ka_options=ka_options(),subactivity_options=subactivity_options())
 
 @app.get("/services/new",response_class=HTMLResponse)
 def service_new(request:Request,client_id:int=0,db:Session=Depends(get_db)):
@@ -310,7 +375,7 @@ async def parse_service_form(request):
 @app.post("/services/new")
 async def service_create(request:Request,db:Session=Depends(get_db)):
     user=require_user(request,db,[ROLE_ADMIN,ROLE_WORKER]); f,inds=await parse_service_form(request); check_csrf(request,f.get('csrf'))
-    s=IndividualService(service_id=uid('VYK'),client_id=int(f['client_id']),service_date=parse_date(f['service_date']),minutes=int(f['minutes']),worker_id=int(f['worker_id']),ka=f.get('ka') or 'KA3',subactivity=f.get('subactivity') or None,area_id=f.get('area_id') or None,activity_id=f.get('activity_id') or None,form_id=f.get('form_id') or None,place_id=f.get('place_id') or None,method_id=f.get('method_id') or None,language_id=f.get('language_id') or None,outcome_id=f.get('outcome_id') or None,next_step_id=f.get('next_step_id') or None,follow_up_date=parse_date(f.get('follow_up_date')),progress_id=f.get('progress_id') or None,referral_id=f.get('referral_id') or None,description=f.get('description') or None,eligible_project=as_bool(f.get('eligible_project')),attendance_sheet_ref=f.get('attendance_sheet_ref') or None,transcribed_from_sheet=as_bool(f.get('transcribed_from_sheet')))
+    s=IndividualService(service_id=uid('VYK'),client_id=int(f['client_id']),service_date=parse_date(f['service_date']),minutes=int(f['minutes']),worker_id=int(f['worker_id']),ka=f.get('ka') or 'KA3',subactivity=validated_subactivity(f.get('ka') or 'KA3',f.get('subactivity')),area_id=f.get('area_id') or None,activity_id=f.get('activity_id') or None,form_id=f.get('form_id') or None,place_id=f.get('place_id') or None,method_id=f.get('method_id') or None,language_id=f.get('language_id') or None,outcome_id=f.get('outcome_id') or None,next_step_id=f.get('next_step_id') or None,follow_up_date=parse_date(f.get('follow_up_date')),progress_id=f.get('progress_id') or None,referral_id=f.get('referral_id') or None,description=f.get('description') or None,eligible_project=as_bool(f.get('eligible_project')),attendance_sheet_ref=f.get('attendance_sheet_ref') or None,transcribed_from_sheet=as_bool(f.get('transcribed_from_sheet')))
     s.catalog_snapshot_json=make_catalog_snapshot(db,{k:getattr(s,k) for k in ['area_id','activity_id','form_id','place_id','method_id','language_id','outcome_id','next_step_id','progress_id','referral_id']})
     db.add(s); db.flush(); sync_indicator_records(db,'service',s.service_id,s.service_date,[s.client_id],inds if s.eligible_project else [],s.transcribed_from_sheet,s.attendance_sheet_ref); audit_log(db,user.id,'create','service',s.service_id,after=snapshot(s),remote_ip=ip(request)); db.commit()
     return RedirectResponse('/services',303)
@@ -332,7 +397,7 @@ def service_edit(service_id:int,request:Request,db:Session=Depends(get_db)):
 async def service_update(service_id:int,request:Request,db:Session=Depends(get_db)):
     user=require_user(request,db,[ROLE_ADMIN,ROLE_WORKER]); f,inds=await parse_service_form(request); check_csrf(request,f.get('csrf')); s=db.get(IndividualService,service_id)
     if not s: raise HTTPException(404)
-    before=snapshot(s); expected=int(f.get('version',0)); values=dict(client_id=int(f['client_id']),service_date=parse_date(f['service_date']),minutes=int(f['minutes']),worker_id=int(f['worker_id']),ka=f.get('ka') or 'KA3',subactivity=f.get('subactivity') or None,area_id=f.get('area_id') or None,activity_id=f.get('activity_id') or None,form_id=f.get('form_id') or None,place_id=f.get('place_id') or None,method_id=f.get('method_id') or None,language_id=f.get('language_id') or None,outcome_id=f.get('outcome_id') or None,next_step_id=f.get('next_step_id') or None,follow_up_date=parse_date(f.get('follow_up_date')),progress_id=f.get('progress_id') or None,referral_id=f.get('referral_id') or None,description=f.get('description') or None,eligible_project=as_bool(f.get('eligible_project')),attendance_sheet_ref=f.get('attendance_sheet_ref') or None,transcribed_from_sheet=as_bool(f.get('transcribed_from_sheet')),version=expected+1,updated_at=datetime.now(timezone.utc).replace(tzinfo=None))
+    before=snapshot(s); expected=int(f.get('version',0)); values=dict(client_id=int(f['client_id']),service_date=parse_date(f['service_date']),minutes=int(f['minutes']),worker_id=int(f['worker_id']),ka=f.get('ka') or 'KA3',subactivity=validated_subactivity(f.get('ka') or 'KA3',f.get('subactivity')),area_id=f.get('area_id') or None,activity_id=f.get('activity_id') or None,form_id=f.get('form_id') or None,place_id=f.get('place_id') or None,method_id=f.get('method_id') or None,language_id=f.get('language_id') or None,outcome_id=f.get('outcome_id') or None,next_step_id=f.get('next_step_id') or None,follow_up_date=parse_date(f.get('follow_up_date')),progress_id=f.get('progress_id') or None,referral_id=f.get('referral_id') or None,description=f.get('description') or None,eligible_project=as_bool(f.get('eligible_project')),attendance_sheet_ref=f.get('attendance_sheet_ref') or None,transcribed_from_sheet=as_bool(f.get('transcribed_from_sheet')),version=expected+1,updated_at=datetime.now(timezone.utc).replace(tzinfo=None))
     values['catalog_snapshot_json']=make_catalog_snapshot(db,values)
     res=db.execute(update(IndividualService).where(IndividualService.id==service_id,IndividualService.version==expected).values(**values))
     if res.rowcount!=1:
@@ -340,14 +405,20 @@ async def service_update(service_id:int,request:Request,db:Session=Depends(get_d
     db.flush(); s=db.get(IndividualService,service_id); sync_indicator_records(db,'service',s.service_id,s.service_date,[s.client_id],inds if s.eligible_project else [],s.transcribed_from_sheet,s.attendance_sheet_ref); audit_log(db,user.id,'update','service',s.service_id,before=before,after=snapshot(s),remote_ip=ip(request)); db.commit(); return RedirectResponse('/services',303)
 
 @app.get("/events",response_class=HTMLResponse)
-def events_list(request:Request,db:Session=Depends(get_db)):
-    require_user(request,db,[ROLE_ADMIN,ROLE_WORKER]); events=db.scalars(select(Event).order_by(Event.event_date.desc(),Event.id.desc())).all(); counts=dict(db.execute(select(EventParticipant.event_id,func.count()).where(EventParticipant.client_id.is_not(None),EventParticipant.attendance_status=='present').group_by(EventParticipant.event_id)).all()); return templates.TemplateResponse(request,"events.html",ctx(request,db,events=events,counts=counts))
+def events_list(request:Request,start:str="",end:str="",event_type:str="",db:Session=Depends(get_db)):
+    require_user(request,db,[ROLE_ADMIN,ROLE_WORKER]); stmt=select(Event).order_by(Event.event_date.desc(),Event.id.desc())
+    if start: stmt=stmt.where(Event.event_date>=parse_date(start))
+    if end: stmt=stmt.where(Event.event_date<=parse_date(end))
+    if event_type: stmt=stmt.where(Event.event_type==event_type)
+    events=db.scalars(stmt).all(); counts=dict(db.execute(select(EventParticipant.event_id,func.count()).where(EventParticipant.client_id.is_not(None),EventParticipant.attendance_status=='present').group_by(EventParticipant.event_id)).all())
+    return templates.TemplateResponse(request,"events.html",ctx(request,db,events=events,counts=counts,start=start,end=end,event_type=event_type,event_types=EVENT_TYPE_LABELS))
 
 def event_form_ctx(request,db,event=None,conflict=False):
     selected_clients=[]; selected_workers=[]; selected_inds=[]; guest_note=''
     if event:
         selected_clients=db.scalars(select(EventParticipant.client_id).where(EventParticipant.event_id==event.id,EventParticipant.client_id.is_not(None))).all(); selected_workers=db.scalars(select(EventWorker.worker_id).where(EventWorker.event_id==event.id)).all(); selected_inds=db.scalars(select(IndicatorRecord.indicator_code).where(IndicatorRecord.source_type=='event',IndicatorRecord.source_id==event.event_id)).all(); guests=db.scalars(select(EventParticipant.display_name).where(EventParticipant.event_id==event.id,EventParticipant.client_id.is_(None))).all(); guest_note='; '.join(x for x in guests if x)
-    return ctx(request,db,event=event,clients=db.scalars(select(Client).where(Client.status=='active').order_by(Client.last_name)).all(),workers=active_workers(db),today=date.today(),selected_clients=selected_clients,selected_workers=selected_workers,selected_indicators=selected_inds,guest_note=guest_note,selectable_indicators=selectable_indicators(),conflict=conflict)
+    clients=list(db.scalars(select(Client).where(Client.status=='active')).all()); clients.sort(key=client_sort_key)
+    return ctx(request,db,event=event,clients=clients,workers=active_workers(db),today=date.today(),selected_clients=selected_clients,selected_workers=selected_workers,selected_indicators=selected_inds,guest_note=guest_note,selectable_indicators=selectable_indicators(),conflict=conflict,ka_options=ka_options(),subactivity_options=subactivity_options(),event_types=EVENT_TYPE_LABELS)
 
 @app.get("/events/new",response_class=HTMLResponse)
 def event_new(request:Request,db:Session=Depends(get_db)):
@@ -360,8 +431,8 @@ async def parse_event_form(request):
 async def event_create(request:Request,db:Session=Depends(get_db)):
     user=require_user(request,db,[ROLE_ADMIN,ROLE_WORKER]); f,client_ids,worker_ids,inds=await parse_event_form(request); check_csrf(request,f.get('csrf'))
     if f.get('event_type')=='civic_orientation' and '026200' not in inds: inds.append('026200')
-    e=Event(event_id=uid('AKC'),title=f['title'],event_date=parse_date(f['event_date']),start_time=f.get('start_time') or None,duration_minutes=int(f['duration_minutes']) if f.get('duration_minutes') else None,ka=f.get('ka') or 'KA2',subactivity=f.get('subactivity') or None,event_type=f.get('event_type') or 'group_program',attendance_sheet_ref=f.get('attendance_sheet_ref') or None,notes=f.get('notes') or None,created_by_id=user.id)
-    db.add(e); db.flush();
+    e=Event(event_id=uid('AKC'),title=f['title'],event_date=parse_date(f['event_date']),start_time=f.get('start_time') or None,duration_minutes=int(f['duration_minutes']) if f.get('duration_minutes') else None,ka=f.get('ka') or 'KA2',subactivity=validated_subactivity(f.get('ka') or 'KA2',f.get('subactivity')),event_type=f.get('event_type') or 'group_program',attendance_sheet_ref=f.get('attendance_sheet_ref') or None,notes=f.get('notes') or None,created_by_id=user.id)
+    db.add(e); db.flush()
     for wid in sorted(set(worker_ids)): db.add(EventWorker(event_id=e.id,worker_id=wid))
     for cid in sorted(set(client_ids)): db.add(EventParticipant(event_id=e.id,client_id=cid,participant_kind='project',attendance_status='present',eligible_project=True,transcribed_from_sheet=True if e.attendance_sheet_ref else False))
     if f.get('guest_note'): db.add(EventParticipant(event_id=e.id,client_id=None,display_name=f.get('guest_note'),participant_kind='guest',attendance_status='present',eligible_project=False))
@@ -371,7 +442,8 @@ async def event_create(request:Request,db:Session=Depends(get_db)):
 def event_detail(event_id:int,request:Request,db:Session=Depends(get_db)):
     require_user(request,db,[ROLE_ADMIN,ROLE_WORKER]); e=db.get(Event,event_id)
     if not e: raise HTTPException(404)
-    participants=db.scalars(select(EventParticipant).options(selectinload(EventParticipant.client)).where(EventParticipant.event_id==e.id,EventParticipant.client_id.is_not(None))).all(); wids=db.scalars(select(EventWorker.worker_id).where(EventWorker.event_id==e.id)).all(); names=worker_name_map(db); return templates.TemplateResponse(request,"event_detail.html",ctx(request,db,event=e,participants=participants,worker_names=[names.get(x,'') for x in wids]))
+    participants=db.scalars(select(EventParticipant).options(selectinload(EventParticipant.client)).where(EventParticipant.event_id==e.id,EventParticipant.client_id.is_not(None))).all(); participants.sort(key=lambda p:client_sort_key(p.client)); wids=db.scalars(select(EventWorker.worker_id).where(EventWorker.event_id==e.id)).all(); names=worker_name_map(db)
+    return templates.TemplateResponse(request,"event_detail.html",ctx(request,db,event=e,participants=participants,worker_names=[names.get(x,'') for x in wids],event_type_label=EVENT_TYPE_LABELS.get(e.event_type,e.event_type),ka_label=SUBACTIVITY_LABELS.get(e.subactivity,KA_LABELS.get(e.ka,e.subactivity or e.ka))))
 
 @app.get("/events/{event_id}/edit",response_class=HTMLResponse)
 def event_edit(event_id:int,request:Request,db:Session=Depends(get_db)):
@@ -381,19 +453,38 @@ def event_edit(event_id:int,request:Request,db:Session=Depends(get_db)):
 
 @app.post("/events/{event_id}/edit")
 async def event_update(event_id:int,request:Request,db:Session=Depends(get_db)):
-    user=require_user(request,db,[ROLE_ADMIN,ROLE_WORKER]); f,client_ids,worker_ids,inds=await parse_event_form(request); check_csrf(request,f.get('csrf'));
+    user=require_user(request,db,[ROLE_ADMIN,ROLE_WORKER]); f,client_ids,worker_ids,inds=await parse_event_form(request); check_csrf(request,f.get('csrf'))
     if f.get('event_type')=='civic_orientation' and '026200' not in inds: inds.append('026200')
     e=db.get(Event,event_id)
     if not e: raise HTTPException(404)
-    before=snapshot(e); expected=int(f.get('version',0)); values=dict(title=f['title'],event_date=parse_date(f['event_date']),start_time=f.get('start_time') or None,duration_minutes=int(f['duration_minutes']) if f.get('duration_minutes') else None,ka=f.get('ka') or 'KA2',subactivity=f.get('subactivity') or None,event_type=f.get('event_type') or 'group_program',attendance_sheet_ref=f.get('attendance_sheet_ref') or None,notes=f.get('notes') or None,version=expected+1,updated_at=datetime.now(timezone.utc).replace(tzinfo=None))
+    before=snapshot(e); expected=int(f.get('version',0)); values=dict(title=f['title'],event_date=parse_date(f['event_date']),start_time=f.get('start_time') or None,duration_minutes=int(f['duration_minutes']) if f.get('duration_minutes') else None,ka=f.get('ka') or 'KA2',subactivity=validated_subactivity(f.get('ka') or 'KA2',f.get('subactivity')),event_type=f.get('event_type') or 'group_program',attendance_sheet_ref=f.get('attendance_sheet_ref') or None,notes=f.get('notes') or None,version=expected+1,updated_at=datetime.now(timezone.utc).replace(tzinfo=None))
     res=db.execute(update(Event).where(Event.id==event_id,Event.version==expected).values(**values))
     if res.rowcount!=1:
         db.rollback(); e=db.get(Event,event_id); return templates.TemplateResponse(request,"event_form.html",event_form_ctx(request,db,e,True),status_code=409)
-    db.execute(delete(EventWorker).where(EventWorker.event_id==event_id)); db.execute(delete(EventParticipant).where(EventParticipant.event_id==event_id))
+    db.execute(delete(EventWorker).where(EventWorker.event_id==event_id))
     for wid in sorted(set(worker_ids)): db.add(EventWorker(event_id=event_id,worker_id=wid))
-    for cid in sorted(set(client_ids)): db.add(EventParticipant(event_id=event_id,client_id=cid,participant_kind='project',attendance_status='present',eligible_project=True,transcribed_from_sheet=True if f.get('attendance_sheet_ref') else False))
+    existing={p.client_id:p for p in db.scalars(select(EventParticipant).where(EventParticipant.event_id==event_id,EventParticipant.client_id.is_not(None))).all()}
+    selected=set(client_ids)
+    for cid,p in list(existing.items()):
+        if cid not in selected: db.delete(p)
+    for cid in sorted(selected):
+        if cid not in existing: db.add(EventParticipant(event_id=event_id,client_id=cid,participant_kind='project',attendance_status='present',eligible_project=True,transcribed_from_sheet=True if f.get('attendance_sheet_ref') else False))
+    db.execute(delete(EventParticipant).where(EventParticipant.event_id==event_id,EventParticipant.client_id.is_(None)))
     if f.get('guest_note'): db.add(EventParticipant(event_id=event_id,client_id=None,display_name=f.get('guest_note'),participant_kind='guest',attendance_status='present',eligible_project=False))
-    db.flush(); e=db.get(Event,event_id); sync_indicator_records(db,'event',e.event_id,e.event_date,client_ids,inds,bool(e.attendance_sheet_ref),e.attendance_sheet_ref); audit_log(db,user.id,'update','event',e.event_id,before=before,after=snapshot(e),remote_ip=ip(request)); db.commit(); return RedirectResponse(f'/events/{event_id}',303)
+    db.flush(); e=db.get(Event,event_id); sync_event_indicators(db,e,inds); audit_log(db,user.id,'update','event',e.event_id,before=before,after=snapshot(e),remote_ip=ip(request)); db.commit(); return RedirectResponse(f'/events/{event_id}',303)
+
+@app.get("/event-participants/{participant_id}/edit",response_class=HTMLResponse)
+def event_participant_edit(participant_id:int,request:Request,db:Session=Depends(get_db)):
+    require_user(request,db,[ROLE_ADMIN,ROLE_WORKER]); p=db.scalar(select(EventParticipant).options(selectinload(EventParticipant.client),selectinload(EventParticipant.event)).where(EventParticipant.id==participant_id))
+    if not p or not p.client: raise HTTPException(404)
+    return templates.TemplateResponse(request,"participant_form.html",ctx(request,db,participant=p))
+
+@app.post("/event-participants/{participant_id}/edit")
+async def event_participant_update(participant_id:int,request:Request,db:Session=Depends(get_db)):
+    user=require_user(request,db,[ROLE_ADMIN,ROLE_WORKER]); f=await request.form(); check_csrf(request,f.get('csrf')); p=db.scalar(select(EventParticipant).options(selectinload(EventParticipant.event)).where(EventParticipant.id==participant_id))
+    if not p or not p.client_id: raise HTTPException(404)
+    before=snapshot(p); p.attendance_status='present' if f.get('attendance_status')=='present' else 'absent'; p.eligible_project=as_bool(f.get('eligible_project')); p.transcribed_from_sheet=as_bool(f.get('transcribed_from_sheet')); db.flush()
+    codes=list(db.scalars(select(IndicatorRecord.indicator_code).where(IndicatorRecord.source_type=='event',IndicatorRecord.source_id==p.event.event_id)).all()); sync_event_indicators(db,p.event,codes); audit_log(db,user.id,'update','event_participant',p.id,before=before,after=snapshot(p),remote_ip=ip(request)); db.commit(); return RedirectResponse(f'/clients/{p.client_id}?kind=skupinová+účast#history',303)
 
 @app.get("/daily-notes",response_class=HTMLResponse)
 def daily_calendar(request:Request,year:int=0,month:int=0,db:Session=Depends(get_db)):
@@ -588,7 +679,7 @@ def health(db:Session=Depends(get_db)):
 def document_new(client_id:int,request:Request,db:Session=Depends(get_db)):
     require_user(request,db,[ROLE_ADMIN,ROLE_WORKER]); c=db.get(Client,client_id)
     if not c: raise HTTPException(404)
-    return templates.TemplateResponse(request,"document_form.html",ctx(request,db,client=c,today=date.today()))
+    return templates.TemplateResponse(request,"document_form.html",ctx(request,db,client=c,document=None,today=date.today(),conflict=False))
 
 @app.post("/clients/{client_id}/documents/new")
 async def document_create(client_id:int,request:Request,db:Session=Depends(get_db)):
@@ -596,7 +687,23 @@ async def document_create(client_id:int,request:Request,db:Session=Depends(get_d
     if not c: raise HTTPException(404)
     f=await request.form(); check_csrf(request,f.get('csrf'))
     d=Document(document_id=uid('DOK'),client_id=c.id,name=f['name'].strip(),kind=f.get('kind') or None,drive_ref=f.get('drive_ref') or None,inserted_date=parse_date(f.get('inserted_date')) or date.today(),worker_id=user.id,notes=f.get('notes') or None)
-    db.add(d); db.flush(); audit_log(db,user.id,'create','document',d.document_id,after=snapshot(d),remote_ip=ip(request)); db.commit(); return RedirectResponse(f'/clients/{client_id}',303)
+    db.add(d); db.flush(); audit_log(db,user.id,'create','document',d.document_id,after=snapshot(d),remote_ip=ip(request)); db.commit(); return RedirectResponse(f'/clients/{client_id}?kind=dokument#history',303)
+
+@app.get("/documents/{document_id}/edit", response_class=HTMLResponse)
+def document_edit(document_id:int,request:Request,db:Session=Depends(get_db)):
+    require_user(request,db,[ROLE_ADMIN,ROLE_WORKER]); d=db.get(Document,document_id)
+    if not d: raise HTTPException(404)
+    return templates.TemplateResponse(request,"document_form.html",ctx(request,db,client=d.client,document=d,today=date.today(),conflict=False))
+
+@app.post("/documents/{document_id}/edit")
+async def document_update(document_id:int,request:Request,db:Session=Depends(get_db)):
+    user=require_user(request,db,[ROLE_ADMIN,ROLE_WORKER]); f=await request.form(); check_csrf(request,f.get('csrf')); d=db.get(Document,document_id)
+    if not d: raise HTTPException(404)
+    before=snapshot(d); expected=int(f.get('version',0)); values=dict(name=f['name'].strip(),kind=f.get('kind') or None,drive_ref=f.get('drive_ref') or None,inserted_date=parse_date(f.get('inserted_date')) or date.today(),notes=f.get('notes') or None,version=expected+1)
+    res=db.execute(update(Document).where(Document.id==document_id,Document.version==expected).values(**values))
+    if res.rowcount!=1:
+        db.rollback(); d=db.get(Document,document_id); return templates.TemplateResponse(request,"document_form.html",ctx(request,db,client=d.client,document=d,today=date.today(),conflict=True),status_code=409)
+    db.flush(); d=db.get(Document,document_id); audit_log(db,user.id,'update','document',d.document_id,before=before,after=snapshot(d),remote_ip=ip(request)); db.commit(); return RedirectResponse(f'/clients/{d.client_id}?kind=dokument#history',303)
 
 
 def activity_report_data(db:Session, filters:dict):
@@ -616,7 +723,7 @@ def activity_report_data(db:Session, filters:dict):
             ss=ss.where(IndividualService.eligible_project==True)
         else: ss=ss.where(IndividualService.service_id.in_(ids))
     for x in db.scalars(ss.order_by(IndividualService.service_date.desc())).all():
-        rows.append({'date':x.service_date,'kind':'individuální','ka':x.subactivity or x.ka,'client':f'{x.client.code} · {x.client.first_name} {x.client.last_name}','client_id':x.client_id,'worker':x.worker.name,'detail':historical_catalog_name(x,'activity_id',names) or x.description or '', 'minutes':x.minutes})
+        rows.append({'date':x.service_date,'kind':'individuální','ka':x.subactivity or x.ka,'client':client_label(x.client),'client_id':x.client_id,'worker':x.worker.name,'detail':historical_catalog_name(x,'activity_id',names) or x.description or '', 'minutes':x.minutes})
         client_ids.add(x.client_id); total_minutes+=x.minutes
     if not area_id and not activity_id:
         es=select(EventParticipant).options(selectinload(EventParticipant.client),selectinload(EventParticipant.event)).join(Event,Event.id==EventParticipant.event_id).join(Client,Client.id==EventParticipant.client_id).where(EventParticipant.client_id.is_not(None),EventParticipant.attendance_status=='present')
@@ -629,7 +736,7 @@ def activity_report_data(db:Session, filters:dict):
         if indicator=='026000': es=es.where(EventParticipant.eligible_project==True,EventParticipant.participant_kind=='project')
         elif indicator: es=es.where(Event.event_id.in_(select(IndicatorRecord.source_id).where(IndicatorRecord.source_type=='event',IndicatorRecord.indicator_code==indicator,IndicatorRecord.eligible==True)))
         for p in db.scalars(es.order_by(Event.event_date.desc())).all():
-            rows.append({'date':p.event.event_date,'kind':'skupinová účast','ka':p.event.subactivity or p.event.ka,'client':f'{p.client.code} · {p.client.first_name} {p.client.last_name}','client_id':p.client_id,'worker':p.event.title,'detail':p.event.event_type,'minutes':0}); client_ids.add(p.client_id)
+            rows.append({'date':p.event.event_date,'kind':'skupinová účast','ka':p.event.subactivity or p.event.ka,'client':client_label(p.client),'client_id':p.client_id,'worker':p.event.title,'detail':EVENT_TYPE_LABELS.get(p.event.event_type,p.event.event_type),'minutes':0}); client_ids.add(p.client_id)
     rows.sort(key=lambda r:r['date'], reverse=True)
     return rows,len(client_ids),total_minutes
 
@@ -662,7 +769,7 @@ def quality_issues(db: Session):
 @app.get("/activity-report",response_class=HTMLResponse)
 def activity_report(request:Request,start:str='',end:str='',ka:str='',worker_id:str='',area_id:str='',activity_id:str='',event_type:str='',status:str='',indicator:str='',db:Session=Depends(get_db)):
     require_user(request,db,[ROLE_ADMIN,ROLE_WORKER]); filters={k:v for k,v in locals().copy().items() if k in {'start','end','ka','worker_id','area_id','activity_id','event_type','status','indicator'}}; rows,unique_clients,minutes=activity_report_data(db,filters); q=urlencode({k:v for k,v in filters.items() if v}); cats=catalogs(db,include_inactive=True)
-    service_count=sum(1 for r in rows if r['kind']=='individuální'); participation_count=sum(1 for r in rows if r['kind']=='skupinová účast'); issues=quality_issues(db); return templates.TemplateResponse(request,"activity_report.html",ctx(request,db,rows=rows,unique_clients=unique_clients,minutes=minutes,hours=round(minutes/60,2),service_count=service_count,participation_count=participation_count,issues=issues,filters=filters,query=q,workers=db.scalars(select(Worker).order_by(Worker.name)).all(),areas=cats.get('Oblast',[]),activities=cats.get('Cinnost',[]),indicators=[(c,n) for c,(n,t) in INDICATORS.items()]))
+    service_count=sum(1 for r in rows if r['kind']=='individuální'); participation_count=sum(1 for r in rows if r['kind']=='skupinová účast'); issues=quality_issues(db); return templates.TemplateResponse(request,"activity_report.html",ctx(request,db,rows=rows,unique_clients=unique_clients,minutes=minutes,hours=round(minutes/60,2),service_count=service_count,participation_count=participation_count,issues=issues,filters=filters,query=q,workers=db.scalars(select(Worker).order_by(Worker.name)).all(),areas=cats.get('Oblast',[]),activities=cats.get('Cinnost',[]),indicators=[(c,n) for c,(n,t) in INDICATORS.items()],ka_options=ka_options(),subactivity_options=subactivity_options(),event_types=EVENT_TYPE_LABELS))
 
 @app.get("/exports/activity.csv")
 def activity_export_csv(request:Request,start:str='',end:str='',ka:str='',worker_id:str='',area_id:str='',activity_id:str='',event_type:str='',status:str='',indicator:str='',db:Session=Depends(get_db)):
