@@ -79,6 +79,63 @@ async def security_headers(request: Request, call_next):
 templates = Jinja2Templates(directory=str(BASE_DIR / "app/templates"))
 
 
+def czdate(value):
+    if not value:
+        return "—"
+    if isinstance(value, (date, datetime)):
+        return value.strftime("%d.%m.%Y")
+    return str(value)
+
+templates.env.filters["czdate"] = czdate
+
+KA_LABELS = {
+    "KA1": "KA1 · Klub Re/generace",
+    "KA2": "KA2 · Strukturované skupiny",
+    "KA3": "KA3 · Individuální podpora",
+}
+SUBACTIVITY_LABELS = {
+    "2.1": "2.1 · Program pro děti (8–15 let)",
+    "2.2": "2.2 · Program pro mládež a mladé dospělé (16–26 let)",
+    "2.3": "2.3 · Komunitní a rodinný integrační program",
+    "2.4": "2.4 · Mezikulturní otevřené akce",
+    "3.1": "3.1 · Kariérní a vzdělávací poradenství",
+    "3.2": "3.2 · Mentoring",
+    "3.3": "3.3 · Psychologické poradenství",
+}
+KA_SUBACTIVITIES = {"KA1": [], "KA2": ["2.1", "2.2", "2.3", "2.4"], "KA3": ["3.1", "3.2", "3.3"]}
+EVENT_TYPE_LABELS = {
+    "club_attendance": "Docházka do klubu",
+    "group_program": "Skupinový program / kroužek",
+    "children_program": "Program pro děti",
+    "youth_program": "Program pro mládež",
+    "civic_orientation": "Kurz občanské orientace",
+    "community_event": "Komunitní a rodinný integrační program",
+    "intercultural_open": "Mezikulturní otevřená akce",
+    "other": "Jiná akce",
+}
+
+def client_label(client):
+    full=f"{client.first_name} {client.last_name}".strip()
+    return f"{client.nickname} · {full}" if getattr(client, "nickname", None) else full
+
+def client_sort_key(client):
+    return ((client.nickname or f"{client.last_name} {client.first_name}").casefold(), client.last_name.casefold(), client.first_name.casefold())
+
+def ka_options():
+    return [(code, label) for code, label in KA_LABELS.items()]
+
+def subactivity_options():
+    return [(code, SUBACTIVITY_LABELS[code], parent) for parent, codes in KA_SUBACTIVITIES.items() for code in codes]
+
+def validated_subactivity(ka: str, subactivity: str | None):
+    sub=(subactivity or "").strip()
+    if not sub:
+        return None
+    if sub not in KA_SUBACTIVITIES.get(ka, []):
+        raise HTTPException(400, f"Podaktivita {sub} nepatří do {ka}.")
+    return sub
+
+
 def ctx(request: Request, db: Session, **extra):
     user = get_current_user(request, db)
     out = {"request": request, "user": user, "csrf": ensure_csrf(request), "app_env": settings.app_env}
@@ -208,16 +265,18 @@ def dashboard(request: Request, db: Session=Depends(get_db)):
         "last_restore":last_restore.finished_at.strftime('%d.%m.%Y %H:%M') if last_restore and last_restore.finished_at else None,
         "open_followups":db.scalar(select(func.count()).select_from(IndividualService).where(IndividualService.follow_up_date.is_not(None),IndividualService.follow_up_date<=today)) or 0,
     }
-    return templates.TemplateResponse(request,"dashboard.html",ctx(request,db,title="Přehled",stats=stats))
+    return templates.TemplateResponse(request,"dashboard.html",ctx(request,db,title="Přehled",stats=stats,month_start=first.isoformat()))
 
 @app.get("/clients",response_class=HTMLResponse)
-def clients_list(request:Request,q:str="",status:str="",db:Session=Depends(get_db)):
-    user=require_user(request,db,[ROLE_ADMIN,ROLE_WORKER])
-    stmt=select(Client).order_by(Client.last_name,Client.first_name)
+def clients_list(request:Request,q:str="",status:str="",monitoring:str="",db:Session=Depends(get_db)):
+    require_user(request,db,[ROLE_ADMIN,ROLE_WORKER])
+    stmt=select(Client)
     if q:
-        term=f"%{q.strip()}%"; stmt=stmt.where(or_(Client.code.ilike(term),Client.first_name.ilike(term),Client.last_name.ilike(term)))
+        term=f"%{q.strip()}%"; stmt=stmt.where(or_(Client.nickname.ilike(term),Client.code.ilike(term),Client.first_name.ilike(term),Client.last_name.ilike(term)))
     if status: stmt=stmt.where(Client.status==status)
-    return templates.TemplateResponse(request,"clients.html",ctx(request,db,title="Klienti",clients=db.scalars(stmt).all(),q=q,status=status))
+    if monitoring in {"yes","no"}: stmt=stmt.where(Client.document_status==monitoring)
+    rows=list(db.scalars(stmt).all()); rows.sort(key=client_sort_key)
+    return templates.TemplateResponse(request,"clients.html",ctx(request,db,title="Klienti",clients=rows,q=q,status=status,monitoring=monitoring))
 
 @app.get("/clients/new",response_class=HTMLResponse)
 def client_new(request:Request,db:Session=Depends(get_db)):
@@ -229,7 +288,7 @@ async def client_create(request:Request,db:Session=Depends(get_db)):
     user=require_user(request,db,[ROLE_ADMIN,ROLE_WORKER]); f=await request.form(); check_csrf(request,f.get('csrf'))
     birth=parse_date(f.get('birth_date'))
     duplicate=db.scalar(select(Client).where(func.lower(Client.first_name)==str(f.get('first_name')).lower(),func.lower(Client.last_name)==str(f.get('last_name')).lower(),Client.birth_date==birth)) if birth else None
-    c=Client(client_id=uid('CLI'),code=str(f['code']).strip(),first_name=str(f['first_name']).strip(),last_name=str(f['last_name']).strip(),birth_date=birth,entry_date=parse_date(f.get('entry_date')),contact=f.get('contact') or None,fewer_opportunities=True if f.get('fewer')=='yes' else False if f.get('fewer')=='no' else None,document_status=f.get('document_status') or 'unknown',drive_ref=f.get('drive_ref') or None,status=f.get('status') or 'active',notes=f.get('notes') or None)
+    c=Client(client_id=uid('CLI'),code=str(f['code']).strip(),nickname=(f.get('nickname') or '').strip() or None,first_name=str(f['first_name']).strip(),last_name=str(f['last_name']).strip(),birth_date=birth,entry_date=parse_date(f.get('entry_date')),contact=f.get('contact') or None,fewer_opportunities=True if f.get('fewer')=='yes' else False if f.get('fewer')=='no' else None,document_status='yes' if f.get('document_status')=='yes' else 'no',status=f.get('status') or 'active',notes=f.get('notes') or None)
     db.add(c); db.flush(); audit_log(db,user.id,'create','client',c.client_id,after=snapshot(c),remote_ip=ip(request)); db.commit()
     return RedirectResponse(f"/clients/{c.id}"+('?duplicate=1' if duplicate else ''),303)
 
