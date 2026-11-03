@@ -670,7 +670,7 @@ def health(db:Session=Depends(get_db)):
 def document_new(client_id:int,request:Request,db:Session=Depends(get_db)):
     require_user(request,db,[ROLE_ADMIN,ROLE_WORKER]); c=db.get(Client,client_id)
     if not c: raise HTTPException(404)
-    return templates.TemplateResponse(request,"document_form.html",ctx(request,db,client=c,today=date.today()))
+    return templates.TemplateResponse(request,"document_form.html",ctx(request,db,client=c,document=None,today=date.today(),conflict=False))
 
 @app.post("/clients/{client_id}/documents/new")
 async def document_create(client_id:int,request:Request,db:Session=Depends(get_db)):
@@ -678,7 +678,24 @@ async def document_create(client_id:int,request:Request,db:Session=Depends(get_d
     if not c: raise HTTPException(404)
     f=await request.form(); check_csrf(request,f.get('csrf'))
     d=Document(document_id=uid('DOK'),client_id=c.id,name=f['name'].strip(),kind=f.get('kind') or None,drive_ref=f.get('drive_ref') or None,inserted_date=parse_date(f.get('inserted_date')) or date.today(),worker_id=user.id,notes=f.get('notes') or None)
-    db.add(d); db.flush(); audit_log(db,user.id,'create','document',d.document_id,after=snapshot(d),remote_ip=ip(request)); db.commit(); return RedirectResponse(f'/clients/{client_id}',303)
+    db.add(d); db.flush(); audit_log(db,user.id,'create','document',d.document_id,after=snapshot(d),remote_ip=ip(request)); db.commit(); return RedirectResponse(f'/clients/{client_id}?kind=dokument#history',303)
+
+
+@app.get("/documents/{document_id}/edit", response_class=HTMLResponse)
+def document_edit(document_id:int,request:Request,db:Session=Depends(get_db)):
+    require_user(request,db,[ROLE_ADMIN,ROLE_WORKER]); d=db.get(Document,document_id)
+    if not d: raise HTTPException(404)
+    return templates.TemplateResponse(request,"document_form.html",ctx(request,db,client=d.client,document=d,today=date.today(),conflict=False))
+
+@app.post("/documents/{document_id}/edit")
+async def document_update(document_id:int,request:Request,db:Session=Depends(get_db)):
+    user=require_user(request,db,[ROLE_ADMIN,ROLE_WORKER]); f=await request.form(); check_csrf(request,f.get('csrf')); d=db.get(Document,document_id)
+    if not d: raise HTTPException(404)
+    before=snapshot(d); expected=int(f.get('version',0)); values=dict(name=f['name'].strip(),kind=f.get('kind') or None,drive_ref=f.get('drive_ref') or None,inserted_date=parse_date(f.get('inserted_date')) or date.today(),notes=f.get('notes') or None,version=expected+1)
+    res=db.execute(update(Document).where(Document.id==document_id,Document.version==expected).values(**values))
+    if res.rowcount!=1:
+        db.rollback(); d=db.get(Document,document_id); return templates.TemplateResponse(request,"document_form.html",ctx(request,db,client=d.client,document=d,today=date.today(),conflict=True),status_code=409)
+    db.flush(); d=db.get(Document,document_id); audit_log(db,user.id,'update','document',d.document_id,before=before,after=snapshot(d),remote_ip=ip(request)); db.commit(); return RedirectResponse(f'/clients/{d.client_id}?kind=dokument#history',303)
 
 
 def activity_report_data(db:Session, filters:dict):
@@ -698,7 +715,7 @@ def activity_report_data(db:Session, filters:dict):
             ss=ss.where(IndividualService.eligible_project==True)
         else: ss=ss.where(IndividualService.service_id.in_(ids))
     for x in db.scalars(ss.order_by(IndividualService.service_date.desc())).all():
-        rows.append({'date':x.service_date,'kind':'individuální','ka':x.subactivity or x.ka,'client':f'{x.client.code} · {x.client.first_name} {x.client.last_name}','client_id':x.client_id,'worker':x.worker.name,'detail':historical_catalog_name(x,'activity_id',names) or x.description or '', 'minutes':x.minutes})
+        rows.append({'date':x.service_date,'kind':'individuální','ka':x.subactivity or x.ka,'client':client_label(x.client),'client_id':x.client_id,'worker':x.worker.name,'detail':historical_catalog_name(x,'activity_id',names) or x.description or '', 'minutes':x.minutes})
         client_ids.add(x.client_id); total_minutes+=x.minutes
     if not area_id and not activity_id:
         es=select(EventParticipant).options(selectinload(EventParticipant.client),selectinload(EventParticipant.event)).join(Event,Event.id==EventParticipant.event_id).join(Client,Client.id==EventParticipant.client_id).where(EventParticipant.client_id.is_not(None),EventParticipant.attendance_status=='present')
@@ -711,7 +728,7 @@ def activity_report_data(db:Session, filters:dict):
         if indicator=='026000': es=es.where(EventParticipant.eligible_project==True,EventParticipant.participant_kind=='project')
         elif indicator: es=es.where(Event.event_id.in_(select(IndicatorRecord.source_id).where(IndicatorRecord.source_type=='event',IndicatorRecord.indicator_code==indicator,IndicatorRecord.eligible==True)))
         for p in db.scalars(es.order_by(Event.event_date.desc())).all():
-            rows.append({'date':p.event.event_date,'kind':'skupinová účast','ka':p.event.subactivity or p.event.ka,'client':f'{p.client.code} · {p.client.first_name} {p.client.last_name}','client_id':p.client_id,'worker':p.event.title,'detail':p.event.event_type,'minutes':0}); client_ids.add(p.client_id)
+            rows.append({'date':p.event.event_date,'kind':'skupinová účast','ka':p.event.subactivity or p.event.ka,'client':client_label(p.client),'client_id':p.client_id,'worker':p.event.title,'detail':EVENT_TYPE_LABELS.get(p.event.event_type,p.event.event_type),'minutes':0}); client_ids.add(p.client_id)
     rows.sort(key=lambda r:r['date'], reverse=True)
     return rows,len(client_ids),total_minutes
 
@@ -744,7 +761,7 @@ def quality_issues(db: Session):
 @app.get("/activity-report",response_class=HTMLResponse)
 def activity_report(request:Request,start:str='',end:str='',ka:str='',worker_id:str='',area_id:str='',activity_id:str='',event_type:str='',status:str='',indicator:str='',db:Session=Depends(get_db)):
     require_user(request,db,[ROLE_ADMIN,ROLE_WORKER]); filters={k:v for k,v in locals().copy().items() if k in {'start','end','ka','worker_id','area_id','activity_id','event_type','status','indicator'}}; rows,unique_clients,minutes=activity_report_data(db,filters); q=urlencode({k:v for k,v in filters.items() if v}); cats=catalogs(db,include_inactive=True)
-    service_count=sum(1 for r in rows if r['kind']=='individuální'); participation_count=sum(1 for r in rows if r['kind']=='skupinová účast'); issues=quality_issues(db); return templates.TemplateResponse(request,"activity_report.html",ctx(request,db,rows=rows,unique_clients=unique_clients,minutes=minutes,hours=round(minutes/60,2),service_count=service_count,participation_count=participation_count,issues=issues,filters=filters,query=q,workers=db.scalars(select(Worker).order_by(Worker.name)).all(),areas=cats.get('Oblast',[]),activities=cats.get('Cinnost',[]),indicators=[(c,n) for c,(n,t) in INDICATORS.items()]))
+    service_count=sum(1 for r in rows if r['kind']=='individuální'); participation_count=sum(1 for r in rows if r['kind']=='skupinová účast'); issues=quality_issues(db); return templates.TemplateResponse(request,"activity_report.html",ctx(request,db,rows=rows,unique_clients=unique_clients,minutes=minutes,hours=round(minutes/60,2),service_count=service_count,participation_count=participation_count,issues=issues,filters=filters,query=q,workers=db.scalars(select(Worker).order_by(Worker.name)).all(),areas=cats.get('Oblast',[]),activities=cats.get('Cinnost',[]),indicators=[(c,n) for c,(n,t) in INDICATORS.items()],ka_options=ka_options(),subactivity_options=subactivity_options(),event_types=EVENT_TYPE_LABELS))
 
 @app.get("/exports/activity.csv")
 def activity_export_csv(request:Request,start:str='',end:str='',ka:str='',worker_id:str='',area_id:str='',activity_id:str='',event_type:str='',status:str='',indicator:str='',db:Session=Depends(get_db)):
