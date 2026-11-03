@@ -265,16 +265,18 @@ def dashboard(request: Request, db: Session=Depends(get_db)):
         "last_restore":last_restore.finished_at.strftime('%d.%m.%Y %H:%M') if last_restore and last_restore.finished_at else None,
         "open_followups":db.scalar(select(func.count()).select_from(IndividualService).where(IndividualService.follow_up_date.is_not(None),IndividualService.follow_up_date<=today)) or 0,
     }
-    return templates.TemplateResponse(request,"dashboard.html",ctx(request,db,title="Přehled",stats=stats))
+    return templates.TemplateResponse(request,"dashboard.html",ctx(request,db,title="Přehled",stats=stats,month_start=first.isoformat()))
 
 @app.get("/clients",response_class=HTMLResponse)
-def clients_list(request:Request,q:str="",status:str="",db:Session=Depends(get_db)):
-    user=require_user(request,db,[ROLE_ADMIN,ROLE_WORKER])
-    stmt=select(Client).order_by(Client.last_name,Client.first_name)
+def clients_list(request:Request,q:str="",status:str="",monitoring:str="",db:Session=Depends(get_db)):
+    require_user(request,db,[ROLE_ADMIN,ROLE_WORKER])
+    stmt=select(Client)
     if q:
-        term=f"%{q.strip()}%"; stmt=stmt.where(or_(Client.code.ilike(term),Client.first_name.ilike(term),Client.last_name.ilike(term)))
+        term=f"%{q.strip()}%"; stmt=stmt.where(or_(Client.nickname.ilike(term),Client.code.ilike(term),Client.first_name.ilike(term),Client.last_name.ilike(term)))
     if status: stmt=stmt.where(Client.status==status)
-    return templates.TemplateResponse(request,"clients.html",ctx(request,db,title="Klienti",clients=db.scalars(stmt).all(),q=q,status=status))
+    if monitoring in {"yes","no"}: stmt=stmt.where(Client.document_status==monitoring)
+    rows=list(db.scalars(stmt).all()); rows.sort(key=client_sort_key)
+    return templates.TemplateResponse(request,"clients.html",ctx(request,db,title="Klienti",clients=rows,q=q,status=status,monitoring=monitoring))
 
 @app.get("/clients/new",response_class=HTMLResponse)
 def client_new(request:Request,db:Session=Depends(get_db)):
@@ -286,7 +288,7 @@ async def client_create(request:Request,db:Session=Depends(get_db)):
     user=require_user(request,db,[ROLE_ADMIN,ROLE_WORKER]); f=await request.form(); check_csrf(request,f.get('csrf'))
     birth=parse_date(f.get('birth_date'))
     duplicate=db.scalar(select(Client).where(func.lower(Client.first_name)==str(f.get('first_name')).lower(),func.lower(Client.last_name)==str(f.get('last_name')).lower(),Client.birth_date==birth)) if birth else None
-    c=Client(client_id=uid('CLI'),code=str(f['code']).strip(),first_name=str(f['first_name']).strip(),last_name=str(f['last_name']).strip(),birth_date=birth,entry_date=parse_date(f.get('entry_date')),contact=f.get('contact') or None,fewer_opportunities=True if f.get('fewer')=='yes' else False if f.get('fewer')=='no' else None,document_status=f.get('document_status') or 'unknown',drive_ref=f.get('drive_ref') or None,status=f.get('status') or 'active',notes=f.get('notes') or None)
+    c=Client(client_id=uid('CLI'),code=str(f['code']).strip(),nickname=(f.get('nickname') or '').strip() or None,first_name=str(f['first_name']).strip(),last_name=str(f['last_name']).strip(),birth_date=birth,entry_date=parse_date(f.get('entry_date')),contact=f.get('contact') or None,fewer_opportunities=True if f.get('fewer')=='yes' else False if f.get('fewer')=='no' else None,document_status='yes' if f.get('document_status')=='yes' else 'no',status=f.get('status') or 'active',notes=f.get('notes') or None)
     db.add(c); db.flush(); audit_log(db,user.id,'create','client',c.client_id,after=snapshot(c),remote_ip=ip(request)); db.commit()
     return RedirectResponse(f"/clients/{c.id}"+('?duplicate=1' if duplicate else ''),303)
 
@@ -301,7 +303,7 @@ async def client_update(client_id:int,request:Request,db:Session=Depends(get_db)
     user=require_user(request,db,[ROLE_ADMIN,ROLE_WORKER]); f=await request.form(); check_csrf(request,f.get('csrf')); c=db.get(Client,client_id)
     if not c: raise HTTPException(404)
     expected=int(f.get('version',0)); before=snapshot(c)
-    values=dict(code=str(f['code']).strip(),first_name=str(f['first_name']).strip(),last_name=str(f['last_name']).strip(),birth_date=parse_date(f.get('birth_date')),entry_date=parse_date(f.get('entry_date')),contact=f.get('contact') or None,fewer_opportunities=True if f.get('fewer')=='yes' else False if f.get('fewer')=='no' else None,document_status=f.get('document_status') or 'unknown',drive_ref=f.get('drive_ref') or None,status=f.get('status') or 'active',notes=f.get('notes') or None,version=expected+1,updated_at=datetime.now(timezone.utc).replace(tzinfo=None))
+    values=dict(code=str(f['code']).strip(),nickname=(f.get('nickname') or '').strip() or None,first_name=str(f['first_name']).strip(),last_name=str(f['last_name']).strip(),birth_date=parse_date(f.get('birth_date')),entry_date=parse_date(f.get('entry_date')),contact=f.get('contact') or None,fewer_opportunities=True if f.get('fewer')=='yes' else False if f.get('fewer')=='no' else None,document_status='yes' if f.get('document_status')=='yes' else 'no',status=f.get('status') or 'active',notes=f.get('notes') or None,version=expected+1,updated_at=datetime.now(timezone.utc).replace(tzinfo=None))
     res=db.execute(update(Client).where(Client.id==client_id,Client.version==expected).values(**values))
     if res.rowcount!=1:
         db.rollback(); c=db.get(Client,client_id); return templates.TemplateResponse(request,"client_form.html",ctx(request,db,client=c,suggested_code='',conflict=True,duplicate_warning=False),status_code=409)
