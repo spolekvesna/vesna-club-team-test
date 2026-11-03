@@ -79,6 +79,63 @@ async def security_headers(request: Request, call_next):
 templates = Jinja2Templates(directory=str(BASE_DIR / "app/templates"))
 
 
+def czdate(value):
+    if not value:
+        return "—"
+    if isinstance(value, (date, datetime)):
+        return value.strftime("%d.%m.%Y")
+    return str(value)
+
+templates.env.filters["czdate"] = czdate
+
+KA_LABELS = {
+    "KA1": "KA1 · Klub Re/generace",
+    "KA2": "KA2 · Strukturované skupiny",
+    "KA3": "KA3 · Individuální podpora",
+}
+SUBACTIVITY_LABELS = {
+    "2.1": "2.1 · Program pro děti (8–15 let)",
+    "2.2": "2.2 · Program pro mládež a mladé dospělé (16–26 let)",
+    "2.3": "2.3 · Komunitní a rodinný integrační program",
+    "2.4": "2.4 · Mezikulturní otevřené akce",
+    "3.1": "3.1 · Kariérní a vzdělávací poradenství",
+    "3.2": "3.2 · Mentoring",
+    "3.3": "3.3 · Psychologické poradenství",
+}
+KA_SUBACTIVITIES = {"KA1": [], "KA2": ["2.1", "2.2", "2.3", "2.4"], "KA3": ["3.1", "3.2", "3.3"]}
+EVENT_TYPE_LABELS = {
+    "club_attendance": "Docházka do klubu",
+    "group_program": "Skupinový program / kroužek",
+    "children_program": "Program pro děti",
+    "youth_program": "Program pro mládež",
+    "civic_orientation": "Kurz občanské orientace",
+    "community_event": "Komunitní a rodinný integrační program",
+    "intercultural_open": "Mezikulturní otevřená akce",
+    "other": "Jiná akce",
+}
+
+def client_label(client):
+    full=f"{client.first_name} {client.last_name}".strip()
+    return f"{client.nickname} · {full}" if getattr(client, "nickname", None) else full
+
+def client_sort_key(client):
+    return ((client.nickname or f"{client.last_name} {client.first_name}").casefold(), client.last_name.casefold(), client.first_name.casefold())
+
+def ka_options():
+    return [(code, label) for code, label in KA_LABELS.items()]
+
+def subactivity_options():
+    return [(code, SUBACTIVITY_LABELS[code], parent) for parent, codes in KA_SUBACTIVITIES.items() for code in codes]
+
+def validated_subactivity(ka: str, subactivity: str | None):
+    sub=(subactivity or "").strip()
+    if not sub:
+        return None
+    if sub not in KA_SUBACTIVITIES.get(ka, []):
+        raise HTTPException(400, f"Podaktivita {sub} nepatří do {ka}.")
+    return sub
+
+
 def ctx(request: Request, db: Session, **extra):
     user = get_current_user(request, db)
     out = {"request": request, "user": user, "csrf": ensure_csrf(request), "app_env": settings.app_env}
