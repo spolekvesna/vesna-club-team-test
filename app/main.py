@@ -345,15 +345,15 @@ def services_list(request:Request,start:str="",end:str="",ka:str="",db:Session=D
     if end: stmt=stmt.where(IndividualService.service_date<=parse_date(end))
     if ka: stmt=stmt.where(or_(IndividualService.ka==ka,IndividualService.subactivity==ka))
     services=db.scalars(stmt).all(); names=catalog_name_map(db)
-    for svc in services: svc.display_activity=historical_catalog_name(svc,'activity_id',names)
-    return templates.TemplateResponse(request,"services.html",ctx(request,db,services=services,catalog_names=names,start=start,end=end,ka=ka))
+    for svc in services: svc.display_activity=historical_catalog_name(svc,'activity_id',names); svc.client_display=client_label(svc.client)
+    return templates.TemplateResponse(request,"services.html",ctx(request,db,services=services,catalog_names=names,start=start,end=end,ka=ka,ka_options=ka_options(),subactivity_options=subactivity_options()))
 
 
 def service_form_ctx(request,db,service=None,selected_client=0,conflict=False,limit_warning=None):
-    cata=catalogs(db,include_inactive=bool(service))
-    selected=[]
+    cata=catalogs(db,include_inactive=bool(service)); selected=[]
     if service: selected=db.scalars(select(IndicatorRecord.indicator_code).where(IndicatorRecord.source_type=='service',IndicatorRecord.source_id==service.service_id)).all()
-    return ctx(request,db,service=service,clients=db.scalars(select(Client).where(Client.status=='active').order_by(Client.last_name)).all(),workers=active_workers(db),catalog=cata,selected_client=selected_client,today=date.today(),selectable_indicators=selectable_indicators(),selected_indicators=selected,conflict=conflict,limit_warning=limit_warning)
+    clients=list(db.scalars(select(Client).where(Client.status=='active')).all()); clients.sort(key=client_sort_key)
+    return ctx(request,db,service=service,clients=clients,workers=active_workers(db),catalog=cata,selected_client=selected_client,today=date.today(),selectable_indicators=selectable_indicators(),selected_indicators=selected,conflict=conflict,limit_warning=limit_warning,ka_options=ka_options(),subactivity_options=subactivity_options())
 
 @app.get("/services/new",response_class=HTMLResponse)
 def service_new(request:Request,client_id:int=0,db:Session=Depends(get_db)):
@@ -365,7 +365,7 @@ async def parse_service_form(request):
 @app.post("/services/new")
 async def service_create(request:Request,db:Session=Depends(get_db)):
     user=require_user(request,db,[ROLE_ADMIN,ROLE_WORKER]); f,inds=await parse_service_form(request); check_csrf(request,f.get('csrf'))
-    s=IndividualService(service_id=uid('VYK'),client_id=int(f['client_id']),service_date=parse_date(f['service_date']),minutes=int(f['minutes']),worker_id=int(f['worker_id']),ka=f.get('ka') or 'KA3',subactivity=f.get('subactivity') or None,area_id=f.get('area_id') or None,activity_id=f.get('activity_id') or None,form_id=f.get('form_id') or None,place_id=f.get('place_id') or None,method_id=f.get('method_id') or None,language_id=f.get('language_id') or None,outcome_id=f.get('outcome_id') or None,next_step_id=f.get('next_step_id') or None,follow_up_date=parse_date(f.get('follow_up_date')),progress_id=f.get('progress_id') or None,referral_id=f.get('referral_id') or None,description=f.get('description') or None,eligible_project=as_bool(f.get('eligible_project')),attendance_sheet_ref=f.get('attendance_sheet_ref') or None,transcribed_from_sheet=as_bool(f.get('transcribed_from_sheet')))
+    s=IndividualService(service_id=uid('VYK'),client_id=int(f['client_id']),service_date=parse_date(f['service_date']),minutes=int(f['minutes']),worker_id=int(f['worker_id']),ka=f.get('ka') or 'KA3',subactivity=validated_subactivity(f.get('ka') or 'KA3',f.get('subactivity')),area_id=f.get('area_id') or None,activity_id=f.get('activity_id') or None,form_id=f.get('form_id') or None,place_id=f.get('place_id') or None,method_id=f.get('method_id') or None,language_id=f.get('language_id') or None,outcome_id=f.get('outcome_id') or None,next_step_id=f.get('next_step_id') or None,follow_up_date=parse_date(f.get('follow_up_date')),progress_id=f.get('progress_id') or None,referral_id=f.get('referral_id') or None,description=f.get('description') or None,eligible_project=as_bool(f.get('eligible_project')),attendance_sheet_ref=f.get('attendance_sheet_ref') or None,transcribed_from_sheet=as_bool(f.get('transcribed_from_sheet')))
     s.catalog_snapshot_json=make_catalog_snapshot(db,{k:getattr(s,k) for k in ['area_id','activity_id','form_id','place_id','method_id','language_id','outcome_id','next_step_id','progress_id','referral_id']})
     db.add(s); db.flush(); sync_indicator_records(db,'service',s.service_id,s.service_date,[s.client_id],inds if s.eligible_project else [],s.transcribed_from_sheet,s.attendance_sheet_ref); audit_log(db,user.id,'create','service',s.service_id,after=snapshot(s),remote_ip=ip(request)); db.commit()
     return RedirectResponse('/services',303)
@@ -387,12 +387,13 @@ def service_edit(service_id:int,request:Request,db:Session=Depends(get_db)):
 async def service_update(service_id:int,request:Request,db:Session=Depends(get_db)):
     user=require_user(request,db,[ROLE_ADMIN,ROLE_WORKER]); f,inds=await parse_service_form(request); check_csrf(request,f.get('csrf')); s=db.get(IndividualService,service_id)
     if not s: raise HTTPException(404)
-    before=snapshot(s); expected=int(f.get('version',0)); values=dict(client_id=int(f['client_id']),service_date=parse_date(f['service_date']),minutes=int(f['minutes']),worker_id=int(f['worker_id']),ka=f.get('ka') or 'KA3',subactivity=f.get('subactivity') or None,area_id=f.get('area_id') or None,activity_id=f.get('activity_id') or None,form_id=f.get('form_id') or None,place_id=f.get('place_id') or None,method_id=f.get('method_id') or None,language_id=f.get('language_id') or None,outcome_id=f.get('outcome_id') or None,next_step_id=f.get('next_step_id') or None,follow_up_date=parse_date(f.get('follow_up_date')),progress_id=f.get('progress_id') or None,referral_id=f.get('referral_id') or None,description=f.get('description') or None,eligible_project=as_bool(f.get('eligible_project')),attendance_sheet_ref=f.get('attendance_sheet_ref') or None,transcribed_from_sheet=as_bool(f.get('transcribed_from_sheet')),version=expected+1,updated_at=datetime.now(timezone.utc).replace(tzinfo=None))
+    before=snapshot(s); expected=int(f.get('version',0)); values=dict(client_id=int(f['client_id']),service_date=parse_date(f['service_date']),minutes=int(f['minutes']),worker_id=int(f['worker_id']),ka=f.get('ka') or 'KA3',subactivity=validated_subactivity(f.get('ka') or 'KA3',f.get('subactivity')),area_id=f.get('area_id') or None,activity_id=f.get('activity_id') or None,form_id=f.get('form_id') or None,place_id=f.get('place_id') or None,method_id=f.get('method_id') or None,language_id=f.get('language_id') or None,outcome_id=f.get('outcome_id') or None,next_step_id=f.get('next_step_id') or None,follow_up_date=parse_date(f.get('follow_up_date')),progress_id=f.get('progress_id') or None,referral_id=f.get('referral_id') or None,description=f.get('description') or None,eligible_project=as_bool(f.get('eligible_project')),attendance_sheet_ref=f.get('attendance_sheet_ref') or None,transcribed_from_sheet=as_bool(f.get('transcribed_from_sheet')),version=expected+1,updated_at=datetime.now(timezone.utc).replace(tzinfo=None))
     values['catalog_snapshot_json']=make_catalog_snapshot(db,values)
     res=db.execute(update(IndividualService).where(IndividualService.id==service_id,IndividualService.version==expected).values(**values))
     if res.rowcount!=1:
         db.rollback(); s=db.get(IndividualService,service_id); return templates.TemplateResponse(request,"service_form.html",service_form_ctx(request,db,service=s,conflict=True),status_code=409)
     db.flush(); s=db.get(IndividualService,service_id); sync_indicator_records(db,'service',s.service_id,s.service_date,[s.client_id],inds if s.eligible_project else [],s.transcribed_from_sheet,s.attendance_sheet_ref); audit_log(db,user.id,'update','service',s.service_id,before=before,after=snapshot(s),remote_ip=ip(request)); db.commit(); return RedirectResponse('/services',303)
+
 
 @app.get("/events",response_class=HTMLResponse)
 def events_list(request:Request,db:Session=Depends(get_db)):
