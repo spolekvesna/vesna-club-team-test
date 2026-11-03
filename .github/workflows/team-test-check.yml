@@ -13,4 +13,4 @@ jobs:
           python-version: "3.13"
       - run: pip install -r requirements.txt -r requirements-dev.txt
       - run: APP_ENV=test DATABASE_URL=sqlite:///./ci.sqlite alembic upgrade head
-      - run: APP_ENV=test DATABASE_URL=sqlite:///./ci.sqlite pytest -q
+      - run: PYTHONPATH=. APP_ENV=test DATABASE_URL=sqlite:///./ci.sqlite pytest -q
