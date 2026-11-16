@@ -1,5 +1,5 @@
 from __future__ import annotations
-import hashlib, os, shutil, sqlite3, subprocess, tempfile
+import hashlib, os, re, shutil, sqlite3, subprocess, tempfile
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from sqlalchemy import create_engine, inspect, text
@@ -44,9 +44,33 @@ def cleanup_remote_backups(days: int):
         token=result.get('NextContinuationToken')
 
 
+def safe_backup_error(error):
+    # Never persist or display command-line arguments containing database URLs.
+    if isinstance(error, subprocess.CalledProcessError):
+        detail = error.stderr or 'Zálohovací příkaz selhal.'
+    else:
+        detail = str(error)
+    detail = re.sub(r"(?:postgres(?:ql)?(?:\+\w+)?|s3)://[^\s\"']+", '[skryté připojení]', detail)
+    detail = detail.replace(settings.database_url, '[skryté připojení]')
+    return detail[:1500]
+
+
+def pg_environment():
+    url = make_url(settings.database_url)
+    env = os.environ.copy()
+    env.update(PGHOST=url.host or '', PGPORT=str(url.port or 5432),
+               PGUSER=url.username or '', PGPASSWORD=url.password or '',
+               PGDATABASE=url.database or '')
+    if url.query.get('sslmode'): env['PGSSLMODE'] = str(url.query['sslmode'])
+    return env
+
+
 def perform_backup(db: Session, backup_dir: str | None=None):
     backup_dir=backup_dir or settings.backup_dir
     Path(backup_dir).mkdir(parents=True,exist_ok=True)
+    for old in db.query(BackupRun).filter(BackupRun.status == 'error').all():
+        old.message = safe_backup_error(old.message or '')
+    db.commit()
     run=BackupRun(kind='backup',status='running'); db.add(run); db.commit(); db.refresh(run)
     stamp=utcnow_naive().strftime('%Y%m%dT%H%M%SZ')
     try:
@@ -64,7 +88,7 @@ def perform_backup(db: Session, backup_dir: str | None=None):
             src_conn.close(); dst_conn.close()
         else:
             dest=Path(backup_dir)/f'vesna-club-{stamp}.dump'
-            subprocess.run(['pg_dump','--format=custom','--no-owner','--no-acl','--file',str(dest),settings.database_url],check=True,capture_output=True,text=True)
+            subprocess.run(['pg_dump','--format=custom','--no-owner','--no-acl','--file',str(dest)],env=pg_environment(),check=True,capture_output=True,text=True,timeout=300)
         run.size_bytes=dest.stat().st_size; run.checksum=_sha256(dest); run.path=str(dest)
         remote_msg=''
         if settings.backup_s3_bucket:
@@ -76,7 +100,7 @@ def perform_backup(db: Session, backup_dir: str | None=None):
             cleanup_remote_backups(settings.backup_retention_days)
         run.status='ok'; run.message='Záloha databáze dokončena.'+remote_msg
     except Exception as e:
-        run.status='error'; run.message=str(e)
+        run.status='error'; run.message=safe_backup_error(e)
     run.finished_at=utcnow_naive(); db.commit()
     cleanup_old_backups(backup_dir, settings.backup_retention_days)
     return run
@@ -144,5 +168,5 @@ def test_restore(db: Session, backup_path: str):
                 eng.dispose()
         run.status='ok'; run.message='Obnova byla skutečně provedena a ověřena v odděleném testovacím prostředí.'
     except Exception as e:
-        run.status='error'; run.message=str(e)
+        run.status='error'; run.message=safe_backup_error(e)
     run.finished_at=utcnow_naive(); db.commit(); return run

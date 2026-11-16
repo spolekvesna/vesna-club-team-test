@@ -396,3 +396,43 @@ def test_last_participant_can_return_without_losing_indicator_selection():
         assert response.status_code==303
         with SessionLocal() as db:
             assert (cid in indicator_clients(db,'026200',date(2026,11,25),date(2026,11,25))) == (status=='present')
+
+
+def test_backup_download_admin_only_and_checksum(tmp_path, monkeypatch):
+    from app.config import settings
+    from dataclasses import replace
+    import importlib
+    monkeypatch.setattr(importlib.import_module('app.main'), 'settings', replace(settings, backup_dir=str(tmp_path)))
+    with SessionLocal() as db:
+        run=perform_backup(db,str(tmp_path)); assert run.status=='ok'
+        rid=run.id; path=Path(run.path)
+    admin=TestClient(app); login(admin)
+    response=admin.get(f'/admin/backups/{rid}/download')
+    assert response.status_code==200 and response.content==path.read_bytes()
+    assert response.headers['cache-control']=='no-store'
+    worker=TestClient(app); login(worker,'worker@example.test')
+    assert worker.get(f'/admin/backups/{rid}/download').status_code==403
+    path.write_bytes(b'corrupt')
+    assert admin.get(f'/admin/backups/{rid}/download').status_code==409
+
+
+def test_backup_error_redaction():
+    import subprocess
+    from app.backups import safe_backup_error
+    secret_url='postgresql://user:secret_password@host/db'
+    error=subprocess.CalledProcessError(1,['pg_dump',secret_url],stderr='pg_dump: server version mismatch')
+    assert safe_backup_error(error)=='pg_dump: server version mismatch'
+    assert 'secret_password' not in safe_backup_error(str(error))
+
+
+def test_backup_download_path_confinement(tmp_path, monkeypatch):
+    from app.config import settings
+    from app.backups import _sha256
+    from dataclasses import replace
+    import importlib
+    monkeypatch.setattr(importlib.import_module('app.main'), 'settings', replace(settings, backup_dir=str(tmp_path/'allowed')))
+    outside=tmp_path/'outside.dump'; outside.write_bytes(b'private')
+    with SessionLocal() as db:
+        row=BackupRun(kind='backup',status='ok',path=str(outside),checksum=_sha256(outside)); db.add(row); db.commit(); rid=row.id
+    admin=TestClient(app); login(admin)
+    assert admin.get(f'/admin/backups/{rid}/download').status_code==404

@@ -7,7 +7,7 @@ from urllib.parse import urlencode
 import httpx
 from oauthlib.oauth2 import WebApplicationClient
 from fastapi import FastAPI, Request, Depends, HTTPException, UploadFile, File
-from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
@@ -24,7 +24,7 @@ from .utils import uid, parse_date, as_bool, csv_safe
 from .catalog_seed import seed_catalog
 from .indicators import INDICATORS, indicator_summary, indicator_clients, supported_clients
 from .importer import save_import_upload, apply_import
-from .backups import perform_backup, test_restore
+from .backups import perform_backup, test_restore, safe_backup_error, _sha256
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -77,6 +77,7 @@ async def security_headers(request: Request, call_next):
     return response
 
 templates = Jinja2Templates(directory=str(BASE_DIR / "app/templates"))
+templates.env.filters["safe_backup_error"] = safe_backup_error
 
 
 def czdate(value):
@@ -658,6 +659,21 @@ async def admin_import_apply(token:str,request:Request,db:Session=Depends(get_db
 @app.get("/admin/backups",response_class=HTMLResponse)
 def admin_backups(request:Request,db:Session=Depends(get_db)):
     require_user(request,db,[ROLE_ADMIN]); runs=db.scalars(select(BackupRun).order_by(BackupRun.started_at.desc()).limit(50)).all(); last_ok=next((r for r in runs if r.kind=='backup' and r.status=='ok'),None); return templates.TemplateResponse(request,"admin_backups.html",ctx(request,db,runs=runs,last_ok=last_ok))
+
+@app.get("/admin/backups/{run_id}/download")
+def download_backup(run_id:int,request:Request,db:Session=Depends(get_db)):
+    require_user(request,db,[ROLE_ADMIN])
+    run=db.get(BackupRun,run_id)
+    if not run or run.kind!='backup' or run.status!='ok' or not run.path:
+        raise HTTPException(404,'Záloha není dostupná.')
+    root=Path(settings.backup_dir).resolve()
+    source=Path(run.path).resolve()
+    if source.parent!=root or source.suffix not in {'.dump','.sqlite3'} or not source.is_file():
+        raise HTTPException(404,'Místní kopie zálohy není dostupná.')
+    if not run.checksum or _sha256(source)!=run.checksum:
+        raise HTTPException(409,'Kontrolní součet zálohy nesouhlasí.')
+    return FileResponse(source,filename=source.name,media_type='application/octet-stream',
+                        headers={'Cache-Control':'no-store','Pragma':'no-cache'})
 
 @app.post("/admin/backups/run")
 async def admin_backup_run(request:Request,db:Session=Depends(get_db)):
